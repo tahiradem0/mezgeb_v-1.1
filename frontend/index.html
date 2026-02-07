@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ExpenseTracker">
+    <meta name="description" content="Track your expenses effortlessly with our beautiful PWA expense tracker">
+
+    <title>Expense Tracker</title>
+
+    <!-- PWA Manifest -->
+    <!-- PWA Manifest - Dynamic load to prevent CORS on file:// -->
+    <script>
+        if (window.location.protocol !== 'file:') {
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = 'manifest.json';
+            document.head.appendChild(link);
+        }
+    </script>
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <svg class="logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="32" cy="32" r="30" fill="#333" />
+                    <path d="M32 16C23.164 16 16 23.164 16 32C16 40.836 23.164 48 32 48C40.836 48 48 40.836 48 32"
+                        stroke="white" stroke-width="4" stroke-linecap="round" />
+                    <circle cx="32" cy="32" r="8" fill="white" />
+                    <path d="M32 24V32L38 38" stroke="#333" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </div>
+            <h1 class="splash-title">Expense Tracker</h1>
+            <div class="splash-loader">
+                <div class="loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="app-container hidden">
+
+        <!-- Login Page -->
+        <section id="login-page" class="page">
+            <div class="page-content auth-page">
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="30" fill="#333" />
+                            <circle cx="32" cy="32" r="8" fill="white" />
+                        </svg>
+                    </div>
+                    <h1 data-i18n="welcome_back">Welcome Back</h1>
+                    <p data-i18n="sign_in_subtitle">Sign in to continue tracking your expenses</p>
+                </div>
+
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-phone" data-i18n="phone_number">Phone Number</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                </svg>
+                            </span>
+                            <input type="tel" id="login-phone" placeholder="+251 912 345 678" required
+                                autocomplete="tel">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password" data-i18n="password">Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                            </span>
+                            <input type="password" id="login-password" data-i18n="placeholder"
+                                placeholder="Enter your password" required autocomplete="new-password">
+                            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" data-i18n="sign_in">Sign In</button>
+
+                    <!-- Biometric Login Removed -->
+                </form>
+
+                <p class="auth-footer">
+                    <span data-i18n="dont_have_account">Don't have an account?</span> <a href="#" id="goto-register"
+                        data-i18n="create_account">Create Account</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- Register Page -->
+        <section id="register-page" class="page hidden">
+            <div class="page-content auth-page">
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="30" fill="#333" />
+                            <circle cx="32" cy="32" r="8" fill="white" />
+                        </svg>
+                    </div>
+                    <h1 data-i18n="create_account">Create Account</h1>
+                    <p data-i18n="create_account_subtitle">Start tracking your expenses today</p>
+                </div>
+
+                <form id="register-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="register-username" data-i18n="username">Username</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                            </span>
+                            <input type="text" id="register-username" placeholder="Enter your name" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-phone" data-i18n="phone_number">Phone Number</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                </svg>
+                            </span>
+                            <input type="tel" id="register-phone" placeholder="+251 912 345 678" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-password" data-i18n="password">Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                            </span>
+                            <input type="password" id="register-password" class="i18n-placeholder"
+                                data-i18n-placeholder="password" placeholder="Create a password" required>
+                            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Biometric Checkbox Removed -->
+
+                    <button type="submit" class="btn btn-primary btn-full" data-i18n="create_account">Create
+                        Account</button>
+                </form>
+
+                <p class="auth-footer">
+                    <span data-i18n="already_have_account">Already have an account?</span> <a href="#" id="goto-login"
+                        data-i18n="sign_in">Sign In</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- Home Page -->
+        <section id="home-page" class="page hidden">
+            <div class="page-content">
+                <!-- Header -->
+                <header class="home-header">
+                    <div class="header-left">
+                        <p class="greeting">Good Morning</p>
+                        <h1 class="username">sir</h1>
+                    </div>
+                    <div class="header-right">
+                        <button class="notification-btn notification-bell" aria-label="Notifications">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                            <span class="notification-badge">2</span>
+                        </button>
+                        <div class="profile-avatar" id="profile-btn">
+                            <img src="https://ui-avatars.com/api/?name=Mezgeb&background=333&color=fff" alt="Profile">
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Context Switcher (For Shared Expenses) -->
+                <div id="context-header-section" style="margin-bottom: 12px; text-align: center; display: none;">
+                    <div class="context-indicator-wrapper"
+                        style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <!-- Dots rendered by JS -->
+                        <span class="context-dot active"></span>
+                        <span class="context-dot"></span>
+                    </div>
+                    <span id="current-context-label"
+                        style="font-size: 0.8rem; font-weight: 500; color: var(--color-text-secondary);">Personal
+                        Expenses</span>
+                </div>
+
+                <div id="home-context-container" style="transition: transform 0.2s ease-out, opacity 0.2s ease-out;">
+
+                    <!-- Total Expense Card -->
+                    <div class="total-expense-card">
+                        <div class="expense-card-header"
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span class="card-title" style="font-size: 0.9rem; opacity: 0.8;">Expense Summary</span>
+                            <button class="privacy-toggle" id="toggle-expenses-eye"
+                                style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1.2rem; padding: 5px; border-radius: 50%; transition: all 0.3s ease;"
+                                aria-label="Toggle visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <p class="card-label">Overall Total</p>
+                                <h2 class="total-amount expense-value" id="lifetime-amount"
+                                    style="font-size: 1.4rem; margin-bottom: 4px;">0.00 <span
+                                        class="currency">ETB</span>
+                                </h2>
+                            </div>
+                            <div style="text-align: right;">
+                                <p class="card-label">This Month</p>
+                                <h2 class="total-amount expense-value" id="month-amount">0.00 <span
+                                        class="currency">ETB</span></h2>
+                            </div>
+                        </div>
+
+                        <div class="expense-trend"
+                            style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+                            <span class="trend-badge trend-up">↑ 0%</span>
+                            <span class="trend-text">this month vs last month</span>
+                        </div>
+                    </div>
+
+                    <!-- Chart Section -->
+                    <div class="chart-section">
+                        <div class="section-header">
+                            <h3 data-i18n="analytics">Analytics</h3>
+                            <div class="chart-period-selector">
+                                <button class="period-btn active" data-period="weekly"
+                                    data-i18n="weekly">Weekly</button>
+                                <button class="period-btn" data-period="monthly" data-i18n="monthly">Monthly</button>
+                                <button class="period-btn" data-period="yearly" data-i18n="yearly">Yearly</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="home-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Categories Section -->
+                    <div class="categories-section">
+                        <div class="section-header">
+                            <h3>Categories</h3>
+                            <a href="#" class="see-all-link">See All</a>
+                        </div>
+                        <div class="categories-grid" id="categories-container">
+                            <!-- Categories will be rendered by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Recent Expenses Section -->
+                    <div class="recent-expenses-section">
+                        <div class="section-header">
+                            <h3>Recent Expenses</h3>
+                            <a href="#" class="see-all-link" id="goto-report">See All</a>
+                        </div>
+                        <div class="expenses-table-container">
+                            <table class="expenses-table" id="recent-expenses-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Reason</th>
+                                        <th>Category</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-expenses-body">
+                                    <!-- Expenses will be rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+    </section>
+
+    <!-- Category Detail Page -->
+    <section id="category-page" class="page hidden">
+        <div class="page-content">
+            <header class="page-header">
+                <button class="back-btn" id="category-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1 id="category-title">🏠 House Expenses</h1>
+                <button class="export-btn" id="export-pdf-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7,10 12,15 17,10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                </button>
+            </header>
+
+            <!-- Category Stats -->
+            <div class="category-stats-section">
+                <div class="stats-row">
+                    <div class="stats-label-group">
+                        <span class="stats-title">Statistics</span>
+                        <button class="privacy-toggle" id="toggle-cat-eye" aria-label="Toggle visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">Total Spent</p>
+                        <h2 class="stat-value cat-value" id="category-total">...</h2>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">This Month</p>
+                        <h2 class="stat-value cat-value" id="category-month">...</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-section">
+                <div class="section-header">
+                    <h3>Spending Trend</h3>
+                    <div class="chart-period-selector">
+                        <button class="period-btn active" data-period="weekly">Weekly</button>
+                        <button class="period-btn" data-period="monthly">Monthly</button>
+                        <button class="period-btn" data-period="yearly">Yearly</button>
+                    </div>
+                </div>
+                <div class="date-range-picker">
+                    <input type="date" id="date-from" class="date-input">
+                    <span>to</span>
+                    <input type="date" id="date-to" class="date-input">
+                </div>
+                <div class="chart-container">
+                    <canvas id="category-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Category Expenses Table -->
+            <div class="expenses-table-container">
+                <table class="expenses-table" id="category-expenses-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Reason</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="category-expenses-body">
+                        <!-- Expenses will be rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Export PDF Button -->
+            <button class="btn btn-primary btn-full export-pdf-main" id="export-pdf-main">
+                📄 Export to PDF
+            </button>
+        </div>
+    </section>
+
+    <!-- Add Expense Page -->
+    <section id="add-expense-page" class="page hidden">
+        <div class="page-content">
+            <header class="page-header">
+                <button class="back-btn" id="add-expense-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1>Record Expense</h1>
+                <div></div>
+            </header>
+
+            <form id="expense-form" class="expense-form">
+                <!-- Amount Input -->
+                <div class="form-group amount-group">
+                    <label for="expense-amount">Amount</label>
+                    <div class="amount-input-wrapper">
+                        <input type="number" id="expense-amount" placeholder="0.00" required>
+                        <span class="currency-label">ETB</span>
+                    </div>
+                </div>
+
+                <!-- Category Selection -->
+                <div class="form-group">
+                    <label>Category</label>
+                    <div class="category-selector" id="category-selector">
+                        <!-- Categories will be rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Reason Input with Autocomplete -->
+                <div class="form-group">
+                    <label for="expense-reason">Reason</label>
+                    <div class="input-wrapper autocomplete-wrapper">
+                        <input type="text" id="expense-reason" placeholder="What was this expense for?"
+                            autocomplete="off" required>
+                        <div class="autocomplete-dropdown hidden" id="reason-suggestions">
+                            <!-- Suggestions will be rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Selection -->
+                <div class="form-group">
+                    <label>Date</label>
+                    <div class="date-options">
+                        <button type="button" class="date-option active" data-date="today">Today</button>
+                        <button type="button" class="date-option" data-date="yesterday">Yesterday</button>
+                        <button type="button" class="date-option" data-date="daysbefore" id="days-before-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            Days before
+                        </button>
+                        <button type="button" class="date-option" data-date="custom">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            Pick Date
+                        </button>
+                    </div>
+                    <input type="date" id="custom-date" class="date-input hidden">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full btn-large">
+                    💾 Save Expense
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Report Page -->
+    <section id="report-page" class="page hidden">
+        <div class="page-content">
+            <header class="page-header">
+                <h1>Reports</h1>
+                <button class="filter-btn" id="filter-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46" />
+                    </svg>
+                </button>
+            </header>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="M21 21l-4.35-4.35" />
+                    </svg>
+                    <input type="text" id="search-expenses" placeholder="Search expenses...">
+                </div>
+            </div>
+
+            <!-- Filter Panel -->
+            <div class="filter-panel hidden" id="filter-panel">
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <div class="filter-dates">
+                        <input type="date" id="filter-date-from" class="date-input">
+                        <span>to</span>
+                        <input type="date" id="filter-date-to" class="date-input">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Amount Range</label>
+                    <div class="filter-amounts">
+                        <input type="number" id="filter-amount-min" placeholder="Min" class="amount-filter">
+                        <span>to</span>
+                        <input type="number" id="filter-amount-max" placeholder="Max" class="amount-filter">
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-full" id="apply-filters">Apply Filters</button>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-section">
+                <div class="chart-period-selector">
+                    <button class="period-btn" data-period="today">Today</button>
+                    <button class="period-btn active" data-period="weekly">Weekly</button>
+                    <button class="period-btn" data-period="monthly">Monthly</button>
+                    <button class="period-btn" data-period="yearly">Yearly</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="report-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- All Expenses Table -->
+            <div class="expenses-table-container">
+                <table class="expenses-table" id="all-expenses-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Reason</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-expenses-body">
+                        <!-- Expenses will be rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings Page -->
+    <section id="settings-page" class="page hidden">
+        <div class="page-content">
+            <header class="page-header">
+                <h1>Settings</h1>
+            </header>
+
+            <!-- Profile Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Profile</h3>
+                <div class="profile-settings">
+                    <div class="profile-image-container">
+                        <img src="https://ui-avatars.com/api/?name=Mezgeb&background=333&color=fff&size=100"
+                            alt="Profile" id="settings-profile-img">
+                        <button class="change-photo-btn" id="change-photo-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                            </svg>
+                        </button>
+                        <input type="file" id="profile-image-input" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="profile-info">
+                        <h4 id="settings-username"></h4>
+                        <p id="settings-phone">+251-000-000-000</p>
+                    </div>
+                </div>
+                <button class="settings-item" id="change-password-btn">
+                    <span class="settings-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                    </span>
+                    <span class="settings-label">Change Password</span>
+                    <span class="settings-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </span>
+                </button>
+            </div>
+
+            <!-- Shared Access Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Shared Access</h3>
+                <div class="categories-list" id="shared-groups-list">
+                    <!-- Render Groups Here -->
+                    <div class="empty-state" style="padding: 10px; text-align: left;">
+                        <p style="font-size: 0.8rem;">No shared connections yet.</p>
+                    </div>
+                </div>
+                <button class="add-category-btn btn btn-outline btn-full" id="connect-group-btn"
+                    style="margin-top: 12px; border-style: dashed;">
+                    <span class="icon" style="margin-right: 8px;">+</span> Connect Partner
+                </button>
+            </div>
+
+            <!-- Appearance Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Appearance</h3>
+                <div class="settings-item">
+                    <span class="settings-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        </svg>
+                    </span>
+                    <span class="settings-label" data-i18n="dark_mode">Dark Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="dark-mode-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <span class="settings-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        </svg>
+                    </span>
+                    <span class="settings-label" data-i18n="language">Language</span>
+                    <div class="language-selector-wrapper">
+                        <select id="language-selector" class="language-dropdown">
+                            <option value="en">English (US)</option>
+                            <option value="am">Amharic (አማርኛ)</option>
+                            <option value="ar">Arabic (العربية)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="settings-item">
+                    <span class="settings-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 7 4 4 20 4 20 7" />
+                            <line x1="9" y1="20" x2="15" y2="20" />
+                            <line x1="12" y1="4" x2="12" y2="20" />
+                        </svg>
+                    </span>
+                    <span class="settings-label">Font Size</span>
+                    <div class="font-size-controls">
+                        <button class="font-btn" id="font-decrease">A-</button>
+                        <span class="font-size-value" id="font-size-value">Medium</span>
+                        <button class="font-btn" id="font-increase">A+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Categories</h3>
+                <button class="btn btn-outline btn-full add-category-btn" id="add-category-btn">
+                    + Add New Category
+                </button>
+                <div class="categories-list" id="settings-categories">
+                    <!-- Categories will be rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">Notifications</h3>
+                <div class="settings-item">
+                    <span class="settings-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </span>
+                    <span class="settings-label">Budget Alert</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="budget-alert-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="budget-alert-settings" id="budget-alert-settings">
+                    <label>Alert when spending exceeds:</label>
+                    <div class="budget-input-wrapper">
+                        <input type="number" id="budget-limit" value="10000">
+                        <span>ETB</span>
+                    </div>
+                </div>
+                <div class="settings-item">
+                    <span class="settings-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                    </span>
+                    <span class="settings-label">Reminder Schedule</span>
+                </div>
+                <div class="reminder-options">
+                    <label class="radio-option">
+                        <input type="radio" name="reminder" value="daily">
+                        <span class="radio-checkmark"></span>
+                        Daily
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reminder" value="weekly" checked>
+                        <span class="radio-checkmark"></span>
+                        Every Monday
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reminder" value="monthly">
+                        <span class="radio-checkmark"></span>
+                        Monthly (1st)
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reminder" value="custom">
+                        <span class="radio-checkmark"></span>
+                        Specific Date
+                    </label>
+                </div>
+            </div>
+
+            <!-- Logout -->
+            <button class="btn btn-outline btn-full logout-btn" id="logout-btn">
+                Sign Out
+            </button>
+            <div style="text-align: center; margin-top: 20px; opacity: 0.5; font-size: 0.7rem;">
+                v1.0.1 (Force-Update/Vercel-Fix)
+            </div>
+        </div>
+    </section>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="nav-item active" data-page="home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9,22 9,12 15,12 15,22" />
+            </svg>
+        </button>
+        <button class="nav-item" data-page="report">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+        </button>
+        <button class="nav-item add-btn" data-page="add-expense">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+        </button>
+        <button class="nav-item" data-page="category">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            </svg>
+        </button>
+        <button class="nav-item" data-page="settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+        </button>
+    </nav>
+
+    <!-- Edit Expense Modal -->
+    <div class="modal hidden" id="edit-expense-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-grabber"></div>
+            <div class="modal-header">
+                <h3>Edit Expense</h3>
+                <button class="modal-close" id="close-edit-modal">×</button>
+            </div>
+            <form id="edit-expense-form">
+                <input type="hidden" id="edit-expense-id">
+                <div class="form-group">
+                    <label for="edit-amount">Amount</label>
+                    <input type="number" id="edit-amount" required>
+                </div>
+
+                <!-- Added Category Selector -->
+                <div class="form-group">
+                    <label>Category</label>
+                    <div class="category-selector" id="edit-category-selector"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; margin-top: 8px;">
+                        <!-- Categories will be rendered by JS -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-reason">Reason</label>
+                    <input type="text" id="edit-reason" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-date">Date</label>
+                    <input type="date" id="edit-date" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+                <button type="button" class="btn btn-error btn-full btn-text" id="delete-expense-btn"
+                    style="margin-top: 10px; color: var(--color-error);">Delete Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal hidden" id="add-category-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-grabber"></div>
+            <div class="modal-header">
+                <h3>Add Category</h3>
+                <button class="modal-close" id="close-category-modal">×</button>
+            </div>
+            <form id="add-category-form">
+                <div class="form-group">
+                    <label for="category-name">Category Name</label>
+                    <input type="text" id="category-name" placeholder="e.g., House, Shop, Company" required>
+                </div>
+                <div class="form-group">
+                    <label>Select Icon</label>
+                    <div class="icon-grid" id="icon-selector">
+                        <!-- Icons will be rendered by JS -->
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Add Category</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Date Picker Modal -->
+    <div class="modal hidden" id="date-picker-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content date-picker-modal">
+            <div class="modal-grabber"></div>
+            <div class="modal-header">
+                <h3>Select Date</h3>
+                <button class="modal-close" id="close-date-picker">×</button>
+            </div>
+            <div class="calendar-container" id="calendar-container">
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn" id="prev-month">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <span class="calendar-title" id="calendar-title">Tir 2018</span>
+                    <button class="calendar-nav-btn" id="next-month">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="calendar-weekdays">
+                    <span class="calendar-weekday">Su</span>
+                    <span class="calendar-weekday">Mo</span>
+                    <span class="calendar-weekday">Tu</span>
+                    <span class="calendar-weekday">We</span>
+                    <span class="calendar-weekday">Th</span>
+                    <span class="calendar-weekday">Fr</span>
+                    <span class="calendar-weekday">Sa</span>
+                </div>
+                <div class="calendar-days" id="calendar-days">
+                    <!-- Days will be rendered by JS -->
+                </div>
+            </div>
+            <button class="btn btn-primary btn-full" id="confirm-date">Confirm Date</button>
+        </div>
+    </div>
+
+    <!-- Days Before Selector Modal -->
+    <div class="modal hidden" id="days-before-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content compact-modal">
+            <div class="modal-grabber"></div>
+            <div class="modal-header">
+                <h3>Select Days Before</h3>
+                <button class="modal-close" id="close-days-before">×</button>
+            </div>
+            <div class="days-options-grid">
+                <button class="days-option-btn" data-days="2">2 Days</button>
+                <button class="days-option-btn" data-days="3">3 Days</button>
+                <button class="days-option-btn" data-days="5">5 Days</button>
+                <button class="days-option-btn" data-days="7">7 Days</button>
+                <button class="days-option-btn" data-days="10">10 Days</button>
+                <button class="days-option-btn" data-days="14">14 Days</button>
+                <button class="days-option-btn" data-days="21">21 Days</button>
+                <button class="days-option-btn" data-days="25">25 Days</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div class="modal hidden" id="password-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-grabber"></div>
+            <div class="modal-header">
+                <h3>Change Password</h3>
+                <button class="modal-close" id="close-password-modal">×</button>
+            </div>
+            <form id="password-form">
+                <div class="form-group">
+                    <label for="current-password">Current Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                        </span>
+                        <input type="password" id="current-password" placeholder="Enter current password" required>
+                        <button type="button" class="toggle-password">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            </svg>
+                        </span>
+                        <input type="password" id="new-password" placeholder="Enter new password" required>
+                        <button type="button" class="toggle-password">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="password-strength-bar"></div>
+                    </div>
+                    <p class="password-hint" id="password-hint">Use 8+ characters with letters, numbers & symbols
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </span>
+                        <input type="password" id="confirm-password" placeholder="Confirm new password" required>
+                        <button type="button" class="toggle-password">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Update Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export PDF Modal -->
+    <div class="modal hidden" id="export-pdf-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-grabber"></div>
+            <div class="modal-header">
+                <h3 data-i18n="export_pdf">Export to PDF</h3>
+                <button class="modal-close" id="close-export-modal">×</button>
+            </div>
+            <div class="pdf-date-range">
+                <div class="form-group">
+                    <label data-i18n="date_from">From</label>
+                    <input type="date" id="pdf-date-from" class="date-input">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="date_to">To</label>
+                    <input type="date" id="pdf-date-to" class="date-input">
+                </div>
+            </div>
+            <button class="btn btn-primary btn-full" id="confirm-export-pdf" data-i18n="export">Export</button>
+        </div>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div class="modal hidden" id="notifications-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content notifications-panel">
+            <div class="modal-grabber"></div>
+            <div class="modal-header">
+                <h3>Notifications</h3>
+                <button class="modal-close" id="close-notifications">×</button>
+            </div>
+            <div class="notifications-list" id="notifications-list">
+                <!-- Notifications will be rendered by JS -->
+            </div>
+            <div class="notifications-empty hidden" id="notifications-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <p>No notifications yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast hidden" id="toast">
+        <div class="toast-indicator"></div>
+        <div class="toast-content">
+            <div class="toast-message"></div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        // Only register service worker when served over HTTP/HTTPS
+        if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
+```

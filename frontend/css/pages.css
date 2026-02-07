@@ -1,0 +1,983 @@
+/* ===================================
+   EXPENSE TRACKER - Page Specific Styles
+   =================================== */
+
+/* ===================================
+   Login & Register Pages
+   =================================== */
+#login-page,
+#register-page {
+    background: linear-gradient(180deg, var(--color-surface-elevated) 0%, var(--color-background) 100%);
+}
+
+/* ===================================
+   Home Page Specific
+   =================================== */
+#home-page .page-content {
+    padding-top: var(--spacing-xl);
+}
+
+/* Summary Cards Row */
+.summary-row {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    overflow-x: auto;
+    padding-bottom: var(--spacing-sm);
+    -webkit-overflow-scrolling: touch;
+}
+
+.summary-card {
+    flex: 0 0 auto;
+    min-width: 140px;
+    padding: var(--spacing-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.summary-card-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--color-surface-elevated);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-lg);
+}
+
+.summary-card-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-bottom: 2px;
+}
+
+.summary-card-value {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+/* ===================================
+   Category Detail Page
+   =================================== */
+#category-page .page-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+#category-page .page-header h1 {
+    font-size: var(--font-size-lg);
+}
+
+/* ===================================
+   Add Expense Page
+   =================================== */
+#add-expense-page .page-content {
+    padding-top: var(--spacing-lg);
+}
+
+#add-expense-page .page-header {
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Quick Amount Buttons */
+.quick-amounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    justify-content: center;
+    margin-top: var(--spacing-md);
+}
+
+.quick-amount-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.quick-amount-btn:hover {
+    background: var(--color-primary);
+    color: var(--color-background);
+    border-color: var(--color-primary);
+}
+
+/* ===================================
+   Report Page
+   =================================== */
+#report-page .page-header {
+    padding-top: var(--spacing-lg);
+}
+
+#report-page .chart-section {
+    margin-top: var(--spacing-md);
+}
+
+/* Report Summary Stats */
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.report-stat {
+    text-align: center;
+    padding: var(--spacing-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.report-stat-value {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.report-stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+/* ===================================
+   Settings Page
+   =================================== */
+#settings-page .page-header {
+    padding-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+#settings-page .page-header h1 {
+    font-size: var(--font-size-2xl);
+}
+
+/* ===================================
+   Chart Customizations
+   =================================== */
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+}
+
+.legend-dot.positive {
+    background: var(--chart-positive);
+}
+
+.legend-dot.negative {
+    background: var(--chart-negative);
+}
+
+/* ===================================
+   Bar Chart Custom Styles
+   =================================== */
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 180px;
+    padding: var(--spacing-md) 0;
+}
+
+.bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex: 1;
+}
+
+.bar-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 140px;
+}
+
+.bar {
+    width: 12px;
+    border-radius: 6px 6px 0 0;
+    transition: height 0.5s ease;
+}
+
+.bar.positive {
+    background: var(--chart-positive);
+}
+
+.bar.negative {
+    background: var(--chart-negative);
+}
+
+.bar.neutral {
+    background: var(--chart-neutral);
+}
+
+.bar-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+/* ===================================
+   Line Chart Custom Styles
+   =================================== */
+.line-chart-wrapper {
+    position: relative;
+    height: 180px;
+}
+
+.line-chart-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.line-chart-path {
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.line-chart-area {
+    fill: url(#chartGradient);
+    opacity: 0.2;
+}
+
+.chart-point {
+    fill: var(--color-primary);
+    stroke: var(--color-background);
+    stroke-width: 2;
+}
+
+.chart-point.active {
+    r: 6;
+}
+
+/* ===================================
+   Table Row Editing
+   =================================== */
+.expense-row-editing {
+    background: var(--color-surface-elevated) !important;
+}
+
+.expense-row-editing td {
+    padding: var(--spacing-xs);
+}
+
+.inline-edit-input {
+    width: 100%;
+    padding: var(--spacing-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+/* ===================================
+   PDF Export Modal
+   =================================== */
+.pdf-preview {
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.pdf-preview-header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.pdf-date-range {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.pdf-date-range label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+/* ===================================
+   Notification Settings
+   =================================== */
+.notification-time-picker {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.time-input {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+/* ===================================
+   Password Change Modal
+   =================================== */
+.password-strength {
+    height: 4px;
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+    margin-top: var(--spacing-sm);
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.password-strength-bar.weak {
+    width: 33%;
+    background: var(--color-error);
+}
+
+.password-strength-bar.medium {
+    width: 66%;
+    background: var(--color-warning);
+}
+
+.password-strength-bar.strong {
+    width: 100%;
+    background: var(--color-success);
+}
+
+/* ===================================
+   Ethiopian Calendar Picker
+   =================================== */
+.ethiopian-calendar {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.calendar-nav-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.calendar-nav-btn:hover {
+    background: var(--color-surface-elevated);
+}
+
+.calendar-title {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.calendar-weekday {
+    text-align: center;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    padding: var(--spacing-sm);
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.calendar-day:hover {
+    background: var(--color-surface-elevated);
+}
+
+.calendar-day.today {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.calendar-day.selected {
+    background: var(--color-primary);
+    color: var(--color-background);
+}
+
+.calendar-day.other-month {
+    color: var(--color-text-muted);
+}
+
+/* ===================================
+   Offline Indicator
+   =================================== */
+.offline-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-warning);
+    color: var(--color-text-primary);
+    text-align: center;
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    z-index: 3000;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.offline-indicator.show {
+    transform: translateY(0);
+}
+
+/* ===================================
+   Pull to Refresh
+   =================================== */
+.pull-to-refresh {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: top 0.2s ease;
+}
+
+.pull-to-refresh.pulling {
+    top: 20px;
+}
+
+.pull-to-refresh-spinner {
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: var(--radius-full);
+}
+
+.pull-to-refresh.refreshing .pull-to-refresh-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* ===================================
+   Onboarding Screens (Optional)
+   =================================== */
+.onboarding-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-background);
+    z-index: 5000;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-xl);
+}
+
+.onboarding-slide {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.onboarding-image {
+    width: 200px;
+    height: 200px;
+    margin-bottom: var(--spacing-xl);
+}
+
+.onboarding-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+}
+
+.onboarding-description {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-base);
+    max-width: 280px;
+    margin: 0 auto var(--spacing-xl);
+}
+
+.onboarding-dots {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xl);
+}
+
+.onboarding-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    transition: all var(--transition-fast);
+}
+
+.onboarding-dot.active {
+    width: 24px;
+    background: var(--color-primary);
+}
+
+/* ===================================
+   Install PWA Banner
+   =================================== */
+.install-banner {
+    position: fixed;
+    bottom: calc(var(--nav-height) + var(--spacing-md));
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    max-width: calc(var(--max-width) - var(--spacing-xl));
+    margin: 0 auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    box-shadow: var(--shadow-xl);
+    z-index: 500;
+    animation: slideInUp 0.3s ease;
+}
+
+.install-banner-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--color-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.install-banner-icon svg {
+    width: 24px;
+    height: 24px;
+    color: var(--color-background);
+}
+
+.install-banner-content {
+    flex: 1;
+}
+
+.install-banner-title {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    margin-bottom: 2px;
+}
+
+.install-banner-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+.install-banner-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-primary);
+    color: var(--color-background);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.install-banner-close {
+    padding: var(--spacing-sm);
+    color: var(--color-text-muted);
+}
+
+/* ===================================
+   Date Picker Modal
+   =================================== */
+.date-picker-modal {
+    max-width: 340px;
+}
+
+.date-picker-modal .ethiopian-calendar {
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    margin-bottom: var(--spacing-lg);
+}
+
+.calendar-nav-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ===================================
+   Page Reveal Animations
+   =================================== */
+
+/* Stagger animation for elements */
+.reveal-stagger>* {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease forwards;
+}
+
+.reveal-stagger>*:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.reveal-stagger>*:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.reveal-stagger>*:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.reveal-stagger>*:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.reveal-stagger>*:nth-child(5) {
+    animation-delay: 0.25s;
+}
+
+.reveal-stagger>*:nth-child(6) {
+    animation-delay: 0.3s;
+}
+
+.reveal-stagger>*:nth-child(7) {
+    animation-delay: 0.35s;
+}
+
+.reveal-stagger>*:nth-child(8) {
+    animation-delay: 0.4s;
+}
+
+@keyframes revealUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fade in animation */
+.reveal-fade {
+    opacity: 0;
+    animation: revealFade 0.4s ease forwards;
+}
+
+@keyframes revealFade {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Scale up animation */
+.reveal-scale {
+    opacity: 0;
+    transform: scale(0.9);
+    animation: revealScale 0.4s ease forwards;
+}
+
+@keyframes revealScale {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Slide in from left */
+.reveal-left {
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: revealLeft 0.4s ease forwards;
+}
+
+@keyframes revealLeft {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Slide in from right */
+.reveal-right {
+    opacity: 0;
+    transform: translateX(20px);
+    animation: revealRight 0.4s ease forwards;
+}
+
+@keyframes revealRight {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Page transition */
+.page {
+    animation: pageIn 0.3s ease;
+}
+
+@keyframes pageIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Home page specific animations */
+#home-page .home-header {
+    animation: revealUp 0.4s ease forwards;
+}
+
+#home-page .total-expense-card {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease 0.1s forwards;
+}
+
+#home-page .chart-section {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease 0.2s forwards;
+}
+
+#home-page .categories-section {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease 0.3s forwards;
+}
+
+#home-page .recent-expenses-section {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease 0.4s forwards;
+}
+
+/* Category cards hover scale */
+.category-card {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.category-card:hover {
+    transform: translateY(-4px) scale(1.02);
+}
+
+/* Settings page animations */
+#settings-page .settings-section {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease forwards;
+}
+
+#settings-page .settings-section:nth-child(1) {
+    animation-delay: 0s;
+}
+
+#settings-page .settings-section:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+#settings-page .settings-section:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+#settings-page .settings-section:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+/* Report page animations */
+#report-page .search-container {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease forwards;
+}
+
+#report-page .chart-section {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease 0.1s forwards;
+}
+
+#report-page .expenses-table-container {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease 0.2s forwards;
+}
+
+/* Add expense page animations */
+#add-expense-page .form-group {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease forwards;
+}
+
+#add-expense-page .form-group:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+#add-expense-page .form-group:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+#add-expense-page .form-group:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+#add-expense-page .form-group:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+#add-expense-page .btn-large {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: revealUp 0.5s ease 0.25s forwards;
+}
+
+/* Table row animations */
+.expenses-table tbody tr {
+    animation: revealUp 0.3s ease forwards;
+}
+
+.expenses-table tbody tr:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.expenses-table tbody tr:nth-child(2) {
+    animation-delay: 0.03s;
+}
+
+.expenses-table tbody tr:nth-child(3) {
+    animation-delay: 0.06s;
+}
+
+.expenses-table tbody tr:nth-child(4) {
+    animation-delay: 0.09s;
+}
+
+.expenses-table tbody tr:nth-child(5) {
+    animation-delay: 0.12s;
+}
+
+/* Button press effect */
+.btn:active {
+    transform: scale(0.97);
+}
+
+/* Modal animation */
+.modal {
+    animation: modalIn 0.25s ease;
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    animation: modalContentIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalContentIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Toast slide in */
+.toast.show {
+    animation: toastSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Spinner for loading states */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

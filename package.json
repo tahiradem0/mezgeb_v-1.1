@@ -1,0 +1,12 @@
+{
+    "name": "mezgeb",
+    "version": "1.0.0",
+    "description": "Mezgeb Expense Tracker PWA",
+    "scripts": {
+        "start": "cd backend && npm start",
+        "dev": "cd backend && npm run dev",
+        "install-all": "npm install && cd backend && npm install"
+    },
+    "author": "",
+    "license": "ISC"
+}
