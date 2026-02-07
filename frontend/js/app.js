@@ -517,48 +517,46 @@ function renderRecentExpensesData(expenses, categories) {
     const isHidden = localStorage.getItem('recentExpensesHidden') === 'true';
 
     if (recentHeaderContainer) {
-        // Clear and rebuild to ensure order: Title -> Icon -> See All
-        // We want them likely aligned to the left or spaced?
-        // "see all text will be next of it" -> Implies Title [Icon] [See All]
-
+        // Layout: [Title + Toggle] ... [See All on right]
         recentHeaderContainer.style.display = 'flex';
         recentHeaderContainer.style.alignItems = 'center';
-        recentHeaderContainer.style.justifyContent = 'flex-start'; // Align all to left as requested "next of it"
+        recentHeaderContainer.style.justifyContent = 'space-between';
         recentHeaderContainer.style.gap = '10px';
 
         recentHeaderContainer.innerHTML = '';
 
-        const title = utils.createElement('h3', { textContent: 'Recent Expenses', style: 'margin: 0;' });
+        // Left side: Title + Toggle grouped together
+        const leftGroup = utils.createElement('div', { style: 'display: flex; align-items: center; gap: 8px;' }, [
+            utils.createElement('h3', { textContent: 'Recent Expenses', style: 'margin: 0;' }),
+            utils.createElement('button', {
+                id: 'toggle-recent-expenses',
+                className: 'privacy-toggle',
+                style: 'background: none; border: none; cursor: pointer; opacity: 0.7; padding: 0; display: flex; align-items: center;',
+                innerHTML: isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>',
+                onClick: (e) => {
+                    e.stopPropagation();
+                    const currentHidden = localStorage.getItem('recentExpensesHidden') === 'true';
+                    localStorage.setItem('recentExpensesHidden', !currentHidden);
+                    renderRecentExpensesData(window.appData.expenses || [], window.appData.categories || []);
+                }
+            })
+        ]);
 
-        const toggleBtn = utils.createElement('button', {
-            id: 'toggle-recent-expenses',
-            className: 'privacy-toggle',
-            style: 'background: none; border: none; cursor: pointer; opacity: 0.7; padding: 0; display: flex; align-items: center;',
-            innerHTML: isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>',
-            onClick: (e) => {
-                e.stopPropagation();
-                const currentHidden = localStorage.getItem('recentExpensesHidden') === 'true';
-                localStorage.setItem('recentExpensesHidden', !currentHidden);
-                renderRecentExpensesData(window.appData.expenses || [], window.appData.categories || []);
-            }
-        });
-
+        // Right side: See All link
         const seeAllLink = utils.createElement('a', {
             href: '#',
             className: 'see-all-link',
             id: 'goto-report',
             textContent: 'See All',
-            style: 'margin-left: 5px; font-size: 0.9rem; text-decoration: none; color: var(--color-primary);' // Ensure visibility
+            style: 'font-size: 0.9rem; text-decoration: none; color: var(--color-primary);'
         });
 
-        // Re-attach listener for See All (since we wiped innerHTML)
         seeAllLink.addEventListener('click', (e) => {
             e.preventDefault();
-            // Goto report logic
-            utils.$('.nav-item[data-target="report"]').click();
+            showPage('report');
         });
 
-        recentHeaderContainer.append(title, toggleBtn, seeAllLink);
+        recentHeaderContainer.append(leftGroup, seeAllLink);
     }
 
     const tbody = utils.$('#recent-expenses-body');
@@ -2871,11 +2869,14 @@ async function openGroupDetails(group) {
                 categories.forEach(cat => {
                     const row = utils.createElement('div', {
                         className: 'category-card',
-                        style: 'display: flex; align-items: center; padding: 10px; margin-bottom: 5px;'
+                        style: 'display: flex; align-items: center; padding: 10px; margin-bottom: 5px; cursor: pointer;',
+                        onClick: () => showEditSharedCategoryForm(group, cat)
                     }, [
                         utils.createElement('span', { textContent: cat.icon, style: 'font-size: 1.2rem; margin-right: 10px;' }),
-                        utils.createElement('span', { textContent: cat.name, style: 'flex: 1;' })
-                        // Could add delete category here if user is admin/member
+                        utils.createElement('div', { style: 'flex: 1;' }, [
+                            utils.createElement('span', { textContent: cat.name, style: 'font-weight: 500;' })
+                        ]),
+                        utils.createElement('span', { textContent: '✏️', style: 'font-size: 0.9rem; opacity: 0.7;' })
                     ]);
                     container.appendChild(row);
                 });
@@ -2886,14 +2887,75 @@ async function openGroupDetails(group) {
     }
 }
 
+// Helper to open edit form for shared category
+function showEditSharedCategoryForm(group, category) {
+    const content = utils.createElement('div', { style: 'padding-bottom: 20px;' }, [
+        utils.createElement('div', { className: 'modal-header' }, [
+            utils.createElement('h3', { textContent: `Edit Category` }),
+            utils.createElement('button', { className: 'modal-close', textContent: '×', onClick: () => utils.hideModal('edit-shared-cat-modal') })
+        ]),
+        utils.createElement('div', { style: 'margin-bottom: 15px;' }, [
+            utils.createElement('label', { textContent: 'Name', style: 'display:block; margin-bottom:5px; font-size:0.9rem;' }),
+            utils.createElement('input', { id: 'edit-shared-cat-name', type: 'text', value: category.name, className: 'date-input', style: 'width: 100%;' })
+        ]),
+        utils.createElement('div', { style: 'margin-bottom: 20px;' }, [
+            utils.createElement('label', { textContent: 'Icon', style: 'display:block; margin-bottom:5px; font-size:0.9rem;' }),
+            utils.createElement('input', { id: 'edit-shared-cat-icon', type: 'text', value: category.icon, className: 'date-input', style: 'width: 100%;' }),
+            utils.createElement('div', { className: 'emoji-quick-select', style: 'margin-top: 8px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px;' },
+                ['🏠', '🍔', '🚗', '💊', '🎉', '✈️', '💡', '🛒', '💰', '🎬', '📱', '🏋️'].map(i => {
+                    return utils.createElement('span', {
+                        textContent: i,
+                        style: 'cursor: pointer; font-size: 1.2rem; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.05);',
+                        onClick: () => document.getElementById('edit-shared-cat-icon').value = i
+                    });
+                })
+            )
+        ]),
+        utils.createElement('button', {
+            className: 'btn btn-primary btn-full',
+            textContent: 'Save Changes',
+            onClick: async () => {
+                const name = document.getElementById('edit-shared-cat-name').value;
+                const icon = document.getElementById('edit-shared-cat-icon').value;
+                if (!name || !icon) return utils.showToast('Fill all fields', 'error');
+
+                try {
+                    await api.updateCategory(category._id, { name, icon });
+                    utils.showToast('Category updated!', 'success');
+                    utils.hideModal('edit-shared-cat-modal');
+                    openGroupDetails(group);
+                } catch (e) {
+                    utils.showToast(e.message, 'error');
+                }
+            }
+        })
+    ]);
+    utils.showModal(content, 'edit-shared-cat-modal');
+}
+
 function showAddSharedCategoryForm(group) {
     const content = utils.createElement('div', { style: 'padding-bottom: 20px;' }, [
         utils.createElement('div', { className: 'modal-header' }, [
             utils.createElement('h3', { textContent: `Add Category to ${group.name}` }),
             utils.createElement('button', { className: 'modal-close', textContent: '×', onClick: () => utils.hideModal('add-shared-cat-modal') })
         ]),
-        utils.createElement('input', { id: 'shared-cat-name', type: 'text', placeholder: 'Category Name', className: 'date-input', style: 'width: 100%; margin-bottom: 10px;' }),
-        utils.createElement('input', { id: 'shared-cat-icon', type: 'text', placeholder: 'Icon (e.g. 🚗)', className: 'date-input', style: 'width: 100%; margin-bottom: 20px;' }),
+        utils.createElement('div', { style: 'margin-bottom: 15px;' }, [
+            utils.createElement('label', { textContent: 'Name', style: 'display:block; margin-bottom:5px; font-size:0.9rem;' }),
+            utils.createElement('input', { id: 'shared-cat-name', type: 'text', placeholder: 'e.g. Groceries', className: 'date-input', style: 'width: 100%;' })
+        ]),
+        utils.createElement('div', { style: 'margin-bottom: 20px;' }, [
+            utils.createElement('label', { textContent: 'Icon', style: 'display:block; margin-bottom:5px; font-size:0.9rem;' }),
+            utils.createElement('input', { id: 'shared-cat-icon', type: 'text', placeholder: 'Select or type emoji', className: 'date-input', style: 'width: 100%;' }),
+            utils.createElement('div', { className: 'emoji-quick-select', style: 'margin-top: 8px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px;' },
+                ['🏠', '🍔', '🚗', '💊', '🎉', '✈️', '💡', '🛒', '💰', '🎬', '📱', '🏋️'].map(i => {
+                    return utils.createElement('span', {
+                        textContent: i,
+                        style: 'cursor: pointer; font-size: 1.2rem; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.05);',
+                        onClick: () => document.getElementById('shared-cat-icon').value = i
+                    });
+                })
+            )
+        ]),
         utils.createElement('button', {
             className: 'btn btn-primary btn-full',
             textContent: 'Save Category',
@@ -2906,7 +2968,7 @@ function showAddSharedCategoryForm(group) {
                     await api.createCategory({ name, icon, groupId: group._id });
                     utils.showToast('Shared category added!', 'success');
                     utils.hideModal('add-shared-cat-modal');
-                    openGroupDetails(group); // Refresh list
+                    openGroupDetails(group);
                 } catch (e) {
                     utils.showToast(e.message, 'error');
                 }
@@ -2915,6 +2977,7 @@ function showAddSharedCategoryForm(group) {
     ]);
     utils.showModal(content, 'add-shared-cat-modal');
 }
+
 
 function showConnectGroupModal() {
     // Create Modal Content
