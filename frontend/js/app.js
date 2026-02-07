@@ -1398,19 +1398,14 @@ async function handleDeleteExpense() {
 
     try {
         utils.showToast('Deleting expense...', 'info');
-        await api.deleteExpense(id);
-
+        await api.deleteExpense(id); // Use 'id' from the form, not 'expense._id'
+        utils.showToast(navigator.onLine ? 'Expense deleted' : 'Marked for deletion (Offline)', 'success');
         utils.hideModal('edit-expense-modal');
-        utils.showToast('Expense deleted', 'success');
 
-        // Refresh current page
-        if (appState.currentPage === 'home') {
-            await renderHome();
-        } else if (appState.currentPage === 'report') {
-            await renderReportExpenses();
-        } else if (appState.currentPage === 'category') {
-            await openCategoryDetail(appState.selectedCategory);
-        }
+        // Refresh data
+        if (appState.currentPage === 'home') await renderHome();
+        else if (appState.currentPage === 'report') await renderReportExpenses(); // Added this line back
+        else if (appState.currentPage === 'category') await openCategoryDetail(appState.selectedCategory);
     } catch (e) {
         utils.showToast(e.message, 'error');
     }
@@ -3063,9 +3058,16 @@ async function initApp() {
         document.documentElement.dataset.fontSize = savedUser.settings.fontSize || 'medium';
     }
 
-    // Main App Init - Handles flow based on token but enforces manual login
-    // Always show login to satisfy "no automatic login" + "password needed every time"
-    showPage('login', false);
+    // Main App Init
+    if (appState.isLoggedIn) {
+        showPage('home');
+        // Try to sync in background if online
+        if (navigator.onLine) {
+            api.syncPendingData().catch(console.error);
+        }
+    } else {
+        showPage('login', false);
+    }
 
     // Network status listeners
     utils.addNetworkListeners(

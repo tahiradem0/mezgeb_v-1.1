@@ -127,6 +127,40 @@ const api = {
             return offlineExpense;
         }
 
+        // PATCH Expense (Update)
+        if (endpoint.startsWith('/expenses/') && options.method === 'PATCH') {
+            const id = endpoint.split('/').pop();
+            const updates = JSON.parse(options.body);
+
+            // If it's a pending item, just update it
+            // If it's a synced item, mark as 'updated'
+            const existing = await db.expenses.get(id);
+            if (existing) {
+                const newStatus = existing.status === 'pending' ? 'pending' : 'updated';
+                await db.expenses.update(id, { ...updates, status: newStatus });
+                this.registerSync();
+                return { ...existing, ...updates, status: newStatus };
+            }
+        }
+
+        // DELETE Expense
+        if (endpoint.startsWith('/expenses/') && options.method === 'DELETE') {
+            const id = endpoint.split('/').pop();
+            const existing = await db.expenses.get(id);
+
+            if (existing) {
+                if (existing.status === 'pending') {
+                    // It was never sent to server, just delete locally
+                    await db.expenses.delete(id);
+                } else {
+                    // It exists on server, mark for deletion
+                    await db.expenses.update(id, { status: 'deleted' });
+                    this.registerSync();
+                }
+                return { success: true };
+            }
+        }
+
         // ...
         if (endpoint.startsWith('/categories')) return db.categories.toArray(); // Fallback
 
@@ -150,11 +184,12 @@ const api = {
     async syncPendingData() {
         if (!navigator.onLine) return;
 
-        // 1. Sync Categories First
-        const pendingCats = await db.categories.where({ status: 'pending' }).toArray();
+        // 1. Sync Categories (Add, Update) - Simplifying updates to just overwrites for now
+        const pendingCats = await db.categories.where('status').anyOf('pending').toArray();
         for (const cat of pendingCats) {
             try {
                 const { _id, status, ...cleanData } = cat;
+                // Currently only handling creates for categories offline
                 const response = await fetch(`${API_BASE_URL}/categories`, {
                     method: 'POST',
                     headers: {
@@ -172,10 +207,14 @@ const api = {
             } catch (e) { console.error('Failed to sync category:', cat, e); }
         }
 
-        // 2. Sync Expenses
+        // 2. Sync Expenses (Create, Update, Delete)
+        // We need to query different statuses: pending (create), updated (edit), deleted (delete)
+
+        // A. Creates
         const pendingExpenses = await db.expenses.where({ status: 'pending' }).toArray();
         for (const exp of pendingExpenses) {
             try {
+                // If ID is temp (pending_...), remove it before sending
                 const { _id, status, ...cleanData } = exp;
                 const response = await fetch(`${API_BASE_URL}/expenses`, {
                     method: 'POST',
@@ -188,12 +227,46 @@ const api = {
 
                 if (response.ok) {
                     const savedExpense = await response.json();
-                    await db.expenses.delete(exp._id);
-                    await db.expenses.add({ ...savedExpense, status: 'synced' });
+                    await db.expenses.delete(exp._id); // Delete temp ID
+                    await db.expenses.add({ ...savedExpense, status: 'synced' }); // Add real ID
                 }
-            } catch (e) {
-                console.error('Failed to sync expense:', exp, e);
-            }
+            } catch (e) { console.error('Failed to sync create expense:', exp, e); }
+        }
+
+        // B. Updates
+        const updatedExpenses = await db.expenses.where({ status: 'updated' }).toArray();
+        for (const exp of updatedExpenses) {
+            try {
+                const { _id, status, ...cleanData } = exp;
+                const response = await fetch(`${API_BASE_URL}/expenses/${_id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(cleanData)
+                });
+
+                if (response.ok) {
+                    await db.expenses.update(_id, { status: 'synced' });
+                }
+            } catch (e) { console.error('Failed to sync update expense:', exp, e); }
+        }
+
+        // C. Deletes
+        // For deletes, we assume we kept the record but marked status='deleted'
+        const deletedExpenses = await db.expenses.where({ status: 'deleted' }).toArray();
+        for (const exp of deletedExpenses) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/expenses/${exp._id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (response.ok || response.status === 404) {
+                    await db.expenses.delete(exp._id);
+                }
+            } catch (e) { console.error('Failed to sync delete expense:', exp, e); }
         }
     },
 
