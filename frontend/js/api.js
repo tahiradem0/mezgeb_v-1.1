@@ -7,13 +7,13 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
     : 'https://mezgeb-v-1-1.onrender.com/api';
 
 // Initialize Dexie (IndexedDB)
+// Initialize Dexie (IndexedDB)
 const db = new Dexie('MezgebDB');
-db.version(3).stores({
-    // Use _id as the primary key since it's unique from MongoDB or generated for pending
+db.version(4).stores({
     expenses: '_id, categoryId, amount, reason, date, status, groupId',
-    categories: '_id, name, icon'
+    categories: '_id, name, icon, status' // Added status
 }).upgrade(tx => {
-    return tx.expenses.clear();
+    // No data migration needed, just schema update
 });
 
 const api = {
