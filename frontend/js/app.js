@@ -351,7 +351,7 @@ async function renderHome() {
             }
         }
 
-        const categories = await api.getCategories();
+        const categories = await api.getCategories(appState.currentGroupId);
         const expenses = await api.getExpenses({ groupId: appState.currentGroupId || undefined });
 
         window.appData = window.appData || {};
@@ -764,7 +764,7 @@ async function renderAddExpense() {
         const selector = utils.$('#category-selector');
         selector.innerHTML = '';
 
-        const categories = await api.getCategories();
+        const categories = await api.getCategories(appState.currentGroupId);
 
         categories.filter(cat => cat.isVisible).forEach((category, index) => {
             const chip = utils.createElement('div', {
@@ -2592,9 +2592,10 @@ async function exportToPDF(dateFrom = null, dateTo = null, categoryId = null) {
         if (dateFrom) filters.dateFrom = new Date(dateFrom).toISOString();
         if (dateTo) filters.dateTo = new Date(dateTo).toISOString();
         if (categoryId) filters.categoryId = categoryId;
+        if (appState.currentGroupId) filters.groupId = appState.currentGroupId;
 
         const expenses = await api.getExpenses(filters);
-        const categories = await api.getCategories();
+        const categories = await api.getCategories(appState.currentGroupId);
 
         if (expenses.length === 0) {
             utils.showToast('No expenses found for the selected criteria', 'warning');
@@ -2853,23 +2854,30 @@ function renderJoinForm() {
 
     const submitBtn = utils.createElement('button', { className: 'btn btn-primary btn-full', textContent: 'Connect' });
 
-    submitBtn.onclick = async () => {
-        const phone = phoneInput.value.trim();
-        const id = idInput.value.trim();
-        if (!phone || !id) return utils.showToast('Please fill all fields', 'error');
+    submitBtn.onclick = async function handleAddCategory() {
+        const name = nameInput.value.trim();
+        const icon = iconInput.value.trim();
+
+        if (!name || !icon) return utils.showToast('Name and icon required', 'error');
 
         try {
-            submitBtn.textContent = 'Connecting...';
-            // Assuming api.joinGroup is restored
-            if (typeof api.joinGroup !== 'function') throw new Error('API Join function missing');
-            await api.joinGroup({ partnerPhone: phone, connectionId: id });
-            utils.showToast('Connected successfully!', 'success');
-            await initGroups();
-            renderGroupsSettings();
+            submitBtn.textContent = 'Saving...';
+            // Passing groupId if present (for shared categories)
+            await api.createCategory({
+                name,
+                icon,
+                groupId: appState.currentGroupId || undefined
+            });
+
+            utils.showToast('Category added', 'success');
             utils.hideModal('dynamic-modal');
+            renderCategoriesSettings();
+
+            // Also refresh home if we are there
+            if (appState.currentPage === 'home') renderHome();
         } catch (e) {
             utils.showToast(e.message, 'error');
-            submitBtn.textContent = 'Connect';
+            submitBtn.textContent = 'Save Category';
         }
     };
 

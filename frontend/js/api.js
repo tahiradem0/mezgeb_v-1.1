@@ -330,8 +330,12 @@ const api = {
     },
 
     // Categories
-    async getCategories() {
-        return this.request('/categories');
+    async getCategories(groupId = null) {
+        let url = '/categories';
+        if (groupId) {
+            url += `?groupId=${groupId}`;
+        }
+        return this.request(url);
     },
 
     async createCategory(categoryData) {
