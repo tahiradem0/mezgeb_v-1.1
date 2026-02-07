@@ -2715,7 +2715,33 @@ function renderGroupsSettings() {
                     utils.createElement('h4', { textContent: group.name, style: 'margin: 0; font-size: 0.9rem;' }),
                     utils.createElement('p', { textContent: `ID: ${group.connectionId}`, style: 'margin: 0; font-size: 0.7rem; opacity: 0.7;' })
                 ]),
-                utils.createElement('span', { textContent: 'Active', style: 'color: var(--color-success); font-size: 0.7rem;' })
+                utils.createElement('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+                    utils.createElement('span', { textContent: 'Active', style: 'color: var(--color-success); font-size: 0.7rem;' }),
+                    utils.createElement('button', {
+                        className: 'category-action-btn delete-btn',
+                        innerHTML: '🗑️',
+                        onClick: async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`Are you sure you want to leave/delete "${group.name}"?`)) {
+                                try {
+                                    await api.deleteGroup(group._id);
+                                    utils.showToast('Removed from group', 'success');
+                                    // Refresh logic
+                                    await initGroups();
+                                    renderGroupsSettings();
+                                    // Reset context if we were in that group
+                                    if (appState.currentGroupId === group._id) {
+                                        appState.currentGroupId = null;
+                                        localStorage.removeItem('currentGroupId');
+                                        updateHomeContextUI();
+                                    }
+                                } catch (err) {
+                                    utils.showToast(err.message, 'error');
+                                }
+                            }
+                        }
+                    })
+                ])
             ]);
             listContainer.appendChild(item);
         });

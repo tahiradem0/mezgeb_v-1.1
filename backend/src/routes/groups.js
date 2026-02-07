@@ -68,4 +68,28 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+// Delete a group (or leave it)
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const group = await Group.findOne({ _id: req.params.id, members: req.user._id });
+        if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+
+        // If user is the only member, delete the group
+        if (group.members.length === 1) {
+            await Group.deleteOne({ _id: req.params.id });
+            return res.json({ message: 'Group deleted' });
+        }
+
+        // Otherwise, just remove the user from members
+        group.members = group.members.filter(m => m.toString() !== req.user._id.toString());
+        await group.save();
+
+        res.json({ message: 'Left the group successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

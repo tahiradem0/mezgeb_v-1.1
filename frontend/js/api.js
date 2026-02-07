@@ -265,6 +265,12 @@ const api = {
         });
     },
 
+    async deleteGroup(id) {
+        return this.request(`/groups/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
     async getMyGroups() {
         return this.request('/groups');
     },
