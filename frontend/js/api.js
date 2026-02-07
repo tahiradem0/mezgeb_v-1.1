@@ -278,7 +278,32 @@ const api = {
         });
         localStorage.setItem('token', data.token);
         localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+        // Save for offline login (Simple has just for offline verification)
+        // In a real app, use WebCrypto or similar. Here we use a basic approach.
+        localStorage.setItem('offline_phone', credentials.phone);
+        localStorage.setItem('offline_key', btoa(credentials.password)); // Base64 for basic obfuscation
+
         return data;
+    },
+
+    async loginOffline(credentials) {
+        const savedPhone = localStorage.getItem('offline_phone');
+        const savedKey = localStorage.getItem('offline_key');
+        const savedUser = localStorage.getItem('currentUser');
+
+        if (!savedPhone || !savedKey || !savedUser) {
+            throw new Error('No offline credentials found. Please login online first.');
+        }
+
+        if (credentials.phone === savedPhone && btoa(credentials.password) === savedKey) {
+            return {
+                user: JSON.parse(savedUser),
+                token: localStorage.getItem('token') // Return existing token
+            };
+        } else {
+            throw new Error('Invalid credentials (Offline)');
+        }
     },
 
     async register(userData) {

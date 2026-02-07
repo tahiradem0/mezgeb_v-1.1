@@ -219,13 +219,23 @@ async function handleLogin(credentials) {
         const btn = utils.$('#login-form button[type="submit"]');
         if (btn) btn.disabled = true;
 
-        utils.showToast('Signing in...', 'info');
+        utils.showToast(navigator.onLine ? 'Signing in...' : 'Signing in offline...', 'info');
 
-        if (typeof api.login !== 'function') {
-            throw new Error('API Login function missing. Please reload.');
+        let user;
+        try {
+            if (navigator.onLine) {
+                await api.login(credentials);
+            } else {
+                await api.loginOffline(credentials);
+            }
+        } catch (authError) {
+            // If online login failed due to network, try offline
+            if (authError.message.includes('network') || !navigator.onLine) {
+                await api.loginOffline(credentials);
+            } else {
+                throw authError; // Re-throw valid errors (wrong pass on server)
+            }
         }
-
-        const data = await api.login(credentials);
 
         // Save phone for autofill
         utils.saveToStorage('savedPhone', credentials.phone);
@@ -238,7 +248,7 @@ async function handleLogin(credentials) {
         showPage('home');
     } catch (e) {
         console.error(e);
-        utils.showToast(e.message || 'Login failed. Check your connection.', 'error');
+        utils.showToast(e.message || 'Login failed.', 'error');
     } finally {
         const btn = utils.$('#login-form button[type="submit"]');
         if (btn) btn.disabled = false;
@@ -494,10 +504,49 @@ function renderCategoriesData(categories, expenses) {
 }
 
 function renderRecentExpensesData(expenses, categories) {
-    const tbody = utils.$('#recent-expenses-body');
-    const recentExpenses = utils.sortBy(expenses, 'date', 'desc').slice(0, 5);
+    const recentHeader = document.querySelector('#home-page .section-header h3'); // Naive selector, better to find by ID
 
+    // Add toggle button to header if not exists
+    let toggleBtn = document.getElementById('toggle-recent-expenses');
+    if (!toggleBtn && recentHeader) {
+        toggleBtn = utils.createElement('button', {
+            id: 'toggle-recent-expenses',
+            className: 'privacy-toggle',
+            style: 'margin-left: 10px; background: none; border: none; cursor: pointer; opacity: 0.7;',
+            innerHTML: '<i class="fas fa-eye"></i>'
+        });
+        recentHeader.appendChild(toggleBtn);
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = localStorage.getItem('recentExpensesHidden') === 'true';
+            localStorage.setItem('recentExpensesHidden', !isHidden);
+            // Re-render
+            renderRecentExpensesData(window.appData.expenses || [], window.appData.categories || []);
+        });
+    }
+
+    const isHidden = localStorage.getItem('recentExpensesHidden') === 'true';
+    if (toggleBtn) {
+        toggleBtn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+    }
+
+    const tbody = utils.$('#recent-expenses-body');
     tbody.innerHTML = '';
+
+    if (isHidden) {
+        const row = utils.createElement('tr', {}, [
+            utils.createElement('td', {
+                colSpan: 4,
+                textContent: '**** Hidden ****',
+                style: 'text-align: center; padding: 20px; color: var(--color-text-muted);'
+            })
+        ]);
+        tbody.appendChild(row);
+        return;
+    }
+
+    const recentExpenses = utils.sortBy(expenses, 'date', 'desc').slice(0, 5);
 
     // Empty State
     if (recentExpenses.length === 0) {
@@ -3059,14 +3108,16 @@ async function initApp() {
     }
 
     // Main App Init
+    // Always show login to satisfy "no automatic login" + "password needed every time"
     if (appState.isLoggedIn) {
-        showPage('home');
-        // Try to sync in background if online
-        if (navigator.onLine) {
-            api.syncPendingData().catch(console.error);
-        }
-    } else {
-        showPage('login', false);
+        // Technically we are "logged in" by token, but we want to force re-entry
+        // So we keep valid data but show login screen
+    }
+    showPage('login', false);
+
+    // Background sync if online
+    if (navigator.onLine && appState.isLoggedIn) {
+        api.syncPendingData().catch(console.error);
     }
 
     // Network status listeners
