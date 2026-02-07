@@ -472,13 +472,22 @@ function renderCategoriesData(categories, expenses) {
             utils.createElement('p', {
                 textContent: 'No categories yet.',
                 style: 'margin-bottom: 10px; color: var(--color-text-secondary);'
-            }),
-            utils.createElement('button', {
+            })
+        ]);
+
+        if (!appState.currentGroupId) {
+            emptyCard.appendChild(utils.createElement('button', {
                 className: 'btn btn-primary',
                 textContent: '+ Add Category',
                 onClick: () => showPage('settings')
-            })
-        ]);
+            }));
+        } else {
+            emptyCard.appendChild(utils.createElement('p', {
+                textContent: 'Manage shared categories in Settings > Groups.',
+                style: 'font-size: 0.8rem; color: var(--color-text-muted);'
+            }));
+        }
+
         container.appendChild(emptyCard);
         return;
     }
@@ -504,31 +513,52 @@ function renderCategoriesData(categories, expenses) {
 }
 
 function renderRecentExpensesData(expenses, categories) {
-    const recentHeader = document.querySelector('#home-page .section-header h3'); // Naive selector, better to find by ID
+    const recentHeaderContainer = document.querySelector('#home-page .recent-expenses-section .section-header');
+    const isHidden = localStorage.getItem('recentExpensesHidden') === 'true';
 
-    // Add toggle button to header if not exists
-    let toggleBtn = document.getElementById('toggle-recent-expenses');
-    if (!toggleBtn && recentHeader) {
-        toggleBtn = utils.createElement('button', {
+    if (recentHeaderContainer) {
+        // Clear and rebuild to ensure order: Title -> Icon -> See All
+        // We want them likely aligned to the left or spaced?
+        // "see all text will be next of it" -> Implies Title [Icon] [See All]
+
+        recentHeaderContainer.style.display = 'flex';
+        recentHeaderContainer.style.alignItems = 'center';
+        recentHeaderContainer.style.justifyContent = 'flex-start'; // Align all to left as requested "next of it"
+        recentHeaderContainer.style.gap = '10px';
+
+        recentHeaderContainer.innerHTML = '';
+
+        const title = utils.createElement('h3', { textContent: 'Recent Expenses', style: 'margin: 0;' });
+
+        const toggleBtn = utils.createElement('button', {
             id: 'toggle-recent-expenses',
             className: 'privacy-toggle',
-            style: 'margin-left: 10px; background: none; border: none; cursor: pointer; opacity: 0.7;',
-            innerHTML: '<i class="fas fa-eye"></i>'
+            style: 'background: none; border: none; cursor: pointer; opacity: 0.7; padding: 0; display: flex; align-items: center;',
+            innerHTML: isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>',
+            onClick: (e) => {
+                e.stopPropagation();
+                const currentHidden = localStorage.getItem('recentExpensesHidden') === 'true';
+                localStorage.setItem('recentExpensesHidden', !currentHidden);
+                renderRecentExpensesData(window.appData.expenses || [], window.appData.categories || []);
+            }
         });
-        recentHeader.appendChild(toggleBtn);
 
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isHidden = localStorage.getItem('recentExpensesHidden') === 'true';
-            localStorage.setItem('recentExpensesHidden', !isHidden);
-            // Re-render
-            renderRecentExpensesData(window.appData.expenses || [], window.appData.categories || []);
+        const seeAllLink = utils.createElement('a', {
+            href: '#',
+            className: 'see-all-link',
+            id: 'goto-report',
+            textContent: 'See All',
+            style: 'margin-left: 5px; font-size: 0.9rem; text-decoration: none; color: var(--color-primary);' // Ensure visibility
         });
-    }
 
-    const isHidden = localStorage.getItem('recentExpensesHidden') === 'true';
-    if (toggleBtn) {
-        toggleBtn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        // Re-attach listener for See All (since we wiped innerHTML)
+        seeAllLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Goto report logic
+            utils.$('.nav-item[data-target="report"]').click();
+        });
+
+        recentHeaderContainer.append(title, toggleBtn, seeAllLink);
     }
 
     const tbody = utils.$('#recent-expenses-body');
@@ -2754,13 +2784,15 @@ function renderGroupsSettings() {
         appState.groups.forEach(group => {
             const item = utils.createElement('div', {
                 className: 'category-card',
-                style: 'padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;'
+                style: 'padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;',
+                onClick: () => openGroupDetails(group)
             }, [
                 utils.createElement('div', {}, [
                     utils.createElement('h4', { textContent: group.name, style: 'margin: 0; font-size: 0.9rem;' }),
                     utils.createElement('p', { textContent: `ID: ${group.connectionId}`, style: 'margin: 0; font-size: 0.7rem; opacity: 0.7;' })
                 ]),
                 utils.createElement('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+                    utils.createElement('span', { textContent: 'Manage', style: 'color: var(--color-primary); font-size: 0.7rem; margin-right: 5px;' }),
                     utils.createElement('span', { textContent: 'Active', style: 'color: var(--color-success); font-size: 0.7rem;' }),
                     utils.createElement('button', {
                         className: 'category-action-btn delete-btn',
@@ -2771,10 +2803,8 @@ function renderGroupsSettings() {
                                 try {
                                     await api.deleteGroup(group._id);
                                     utils.showToast('Removed from group', 'success');
-                                    // Refresh logic
                                     await initGroups();
                                     renderGroupsSettings();
-                                    // Reset context if we were in that group
                                     if (appState.currentGroupId === group._id) {
                                         appState.currentGroupId = null;
                                         localStorage.removeItem('currentGroupId');
@@ -2796,6 +2826,94 @@ function renderGroupsSettings() {
     if (connectBtn) {
         connectBtn.onclick = showConnectGroupModal;
     }
+}
+
+async function openGroupDetails(group) {
+    const content = utils.createElement('div', { style: 'padding-bottom: 20px;' }, [
+        utils.createElement('div', { className: 'modal-header' }, [
+            utils.createElement('h3', { textContent: `Manage ${group.name}` }),
+            utils.createElement('button', { className: 'modal-close', textContent: '×', onClick: () => utils.hideModal('group-details-modal') })
+        ]),
+        utils.createElement('div', { style: 'margin-bottom: 20px;' }, [
+            utils.createElement('h4', { textContent: 'Shared Categories', style: 'margin-bottom: 10px;' }),
+            utils.createElement('div', { id: `group-cats-${group._id}`, className: 'categories-grid', style: 'grid-template-columns: 1fr;' }),
+            utils.createElement('button', {
+                className: 'btn btn-outline btn-full',
+                textContent: '+ Add Shared Category',
+                style: 'margin-top: 10px;',
+                onClick: () => {
+                    // Open category creation specifically for this group
+                    // Since we are in a modal, maybe replace content or stack?
+                    // Let's use the existing "Add Category" modal but pass the group ID
+                    // Need to adapt handleAddCategory to accept context or set global?
+
+                    // We can set a temporary state or pass params to showAddCategoryModal if we had one.
+                    // Currently handleAddCategory uses inputs from the settings page.
+                    // Let's create a specialized small form inside here or reuse logic.
+                    showAddSharedCategoryForm(group);
+                }
+            })
+        ])
+    ]);
+
+    utils.showModal(content, 'group-details-modal');
+
+    // Load categories for this group
+    const container = document.getElementById(`group-cats-${group._id}`);
+    if (container) {
+        container.innerHTML = '<p>Loading...</p>';
+        try {
+            const categories = await api.getCategories(group._id);
+            container.innerHTML = '';
+            if (categories.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color: var(--color-text-muted);">No shared categories yet.</p>';
+            } else {
+                categories.forEach(cat => {
+                    const row = utils.createElement('div', {
+                        className: 'category-card',
+                        style: 'display: flex; align-items: center; padding: 10px; margin-bottom: 5px;'
+                    }, [
+                        utils.createElement('span', { textContent: cat.icon, style: 'font-size: 1.2rem; margin-right: 10px;' }),
+                        utils.createElement('span', { textContent: cat.name, style: 'flex: 1;' })
+                        // Could add delete category here if user is admin/member
+                    ]);
+                    container.appendChild(row);
+                });
+            }
+        } catch (e) {
+            container.innerHTML = '<p>Error loading categories.</p>';
+        }
+    }
+}
+
+function showAddSharedCategoryForm(group) {
+    const content = utils.createElement('div', { style: 'padding-bottom: 20px;' }, [
+        utils.createElement('div', { className: 'modal-header' }, [
+            utils.createElement('h3', { textContent: `Add Category to ${group.name}` }),
+            utils.createElement('button', { className: 'modal-close', textContent: '×', onClick: () => utils.hideModal('add-shared-cat-modal') })
+        ]),
+        utils.createElement('input', { id: 'shared-cat-name', type: 'text', placeholder: 'Category Name', className: 'date-input', style: 'width: 100%; margin-bottom: 10px;' }),
+        utils.createElement('input', { id: 'shared-cat-icon', type: 'text', placeholder: 'Icon (e.g. 🚗)', className: 'date-input', style: 'width: 100%; margin-bottom: 20px;' }),
+        utils.createElement('button', {
+            className: 'btn btn-primary btn-full',
+            textContent: 'Save Category',
+            onClick: async () => {
+                const name = document.getElementById('shared-cat-name').value;
+                const icon = document.getElementById('shared-cat-icon').value;
+                if (!name || !icon) return utils.showToast('Fill all fields', 'error');
+
+                try {
+                    await api.createCategory({ name, icon, groupId: group._id });
+                    utils.showToast('Shared category added!', 'success');
+                    utils.hideModal('add-shared-cat-modal');
+                    openGroupDetails(group); // Refresh list
+                } catch (e) {
+                    utils.showToast(e.message, 'error');
+                }
+            }
+        })
+    ]);
+    utils.showModal(content, 'add-shared-cat-modal');
 }
 
 function showConnectGroupModal() {
