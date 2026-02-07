@@ -318,10 +318,12 @@ function initHome() {
     if (swipeContainer) {
         swipeContainer.addEventListener('touchstart', e => {
             touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
 
         swipeContainer.addEventListener('touchend', e => {
             touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
             handleSwipe();
         }, { passive: true });
     }
@@ -2871,18 +2873,29 @@ function renderCreateForm() {
 }
 
 // Global Swipe State
+// Global Swipe State
 let touchStartX = 0;
+let touchStartY = 0;
 let touchEndX = 0;
+let touchEndY = 0;
 
 function handleSwipe() {
     const SWIPE_THRESHOLD = 50;
-    if (touchEndX < touchStartX - SWIPE_THRESHOLD) {
-        // Swiped Left -> Next Context
-        switchContext('next');
-    }
-    if (touchEndX > touchStartX + SWIPE_THRESHOLD) {
-        // Swiped Right -> Prev Context
-        switchContext('prev');
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+
+    // Only trigger if horizontal movement is significantly greater than vertical movement
+    // This prevents triggering swipe while scrolling down
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+            if (diffX < 0) {
+                // Swiped Left -> Next Context
+                switchContext('next');
+            } else {
+                // Swiped Right -> Prev Context
+                switchContext('prev');
+            }
+        }
     }
 }
 

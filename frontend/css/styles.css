@@ -1274,3 +1274,77 @@ ol {
 [data-theme="dark"] .language-dropdown:focus {
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
 }
+
+/* ===================================
+   Context Dots (Added for Shared Groups)
+   =================================== */
+.context-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-border);
+    transition: background-color 0.3s ease;
+}
+
+.context-dot.active {
+    background-color: var(--color-primary);
+    width: 8px;
+    height: 8px;
+}
+
+/* ===================================
+   Animations
+   =================================== */
+.slide-out-left {
+    animation: slideOutLeft 0.3s forwards;
+}
+
+.slide-out-right {
+    animation: slideOutRight 0.3s forwards;
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.3s forwards;
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s forwards;
+}
+
+@keyframes slideOutLeft {
+    to {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideOutRight {
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
