@@ -7,6 +7,7 @@ const expenseSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: Date, required: true },
   dateEthiopian: { type: String },
+  receiptUrl: { type: String, default: null },
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', default: null },
   createdAt: { type: Date, default: Date.now }
 });

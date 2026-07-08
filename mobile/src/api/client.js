@@ -1,0 +1,84 @@
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
+const API_BASE_URL = 'http://192.168.120.230:5000/api'; // using local backend url
+
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Intercept requests to add token
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Intercept responses for auth errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn('Session expired or invalid. Logging out.');
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('currentUser');
+      // A mechanism to notify the app to show login screen
+    }
+    return Promise.reject(error);
+  }
+);
+
+/* ===================================
+   OFFLINE SYNC & STORAGE 
+   =================================== */
+
+// We will store pending actions in AsyncStorage 
+const OFFLINE_QUEUE_KEY = 'offline_queue';
+
+export const addToOfflineQueue = async (action) => {
+  try {
+    const queue = JSON.parse(await AsyncStorage.getItem(OFFLINE_QUEUE_KEY)) || [];
+    queue.push(action);
+    await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  } catch (e) {
+    console.error('Failed to add to offline queue', e);
+  }
+};
+
+export const syncOfflineData = async () => {
+  const netInfo = await NetInfo.fetch();
+  if (!netInfo.isConnected) return;
+
+  try {
+    const queue = JSON.parse(await AsyncStorage.getItem(OFFLINE_QUEUE_KEY)) || [];
+    if (queue.length === 0) return;
+
+    // Process queue
+    const remainingQueue = [];
+    for (let action of queue) {
+      try {
+        await apiClient.request({
+          method: action.method,
+          url: action.url,
+          data: action.data,
+        });
+      } catch (err) {
+        console.error('Failed to sync action', action, err);
+        remainingQueue.push(action); // Retry later if it wasn't a 4xx error (e.g., 500)
+      }
+    }
+
+    await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remainingQueue));
+  } catch (e) {
+    console.error('Sync error', e);
+  }
+};

@@ -41,7 +41,11 @@ router.get('/', auth, async (req, res) => {
             query.categoryId = categoryId;
         }
 
-        const expenses = await Expense.find(query).sort({ date: -1 }).populate('categoryId').populate('userId', 'username profileImage');
+        const expenses = await Expense.find(query)
+            .select('-receiptUrl') // Exclude heavy image data
+            .sort({ date: -1 })
+            .populate('categoryId')
+            .populate('userId', 'username');
         res.json(expenses);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -67,7 +71,7 @@ router.post('/', auth, async (req, res) => {
         await expense.save();
 
         // Populate user info for immediate frontend update in shared view
-        await expense.populate('userId', 'username profileImage');
+        await expense.populate('userId', 'username');
 
         res.status(201).json(expense);
     } catch (e) {
@@ -76,16 +80,46 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
+// Get expense receipt
+router.get('/:id/receipt', auth, async (req, res) => {
+    try {
+        const expense = await Expense.findById(req.params.id).select('receiptUrl groupId userId');
+        if (!expense) return res.status(404).json({ error: 'Expense not found' });
+
+        // Verify access (Personal or Shared Group)
+        if (expense.groupId) {
+            const group = await Group.findOne({ _id: expense.groupId, members: req.user._id });
+            if (!group) return res.status(403).json({ error: 'Access denied' });
+        } else if (expense.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        res.json({ receiptUrl: expense.receiptUrl });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Update expense
 router.patch('/:id', auth, async (req, res) => {
     try {
-        const expense = await Expense.findOneAndUpdate(
-            { _id: req.params.id, userId: req.user._id },
+        const expense = await Expense.findById(req.params.id);
+        if (!expense) return res.status(404).json();
+
+        let hasPermission = expense.userId.toString() === req.user._id.toString();
+        if (!hasPermission && expense.groupId) {
+            const group = await Group.findOne({ _id: expense.groupId, members: req.user._id });
+            if (group) hasPermission = true;
+        }
+
+        if (!hasPermission) return res.status(403).json({ error: 'Permission denied' });
+
+        const updatedExpense = await Expense.findByIdAndUpdate(
+            req.params.id,
             req.body,
             { new: true }
         );
-        if (!expense) return res.status(404).json();
-        res.json(expense);
+        res.json(updatedExpense);
     } catch (e) {
         res.status(400).json({ error: e.message });
     }
@@ -94,8 +128,18 @@ router.patch('/:id', auth, async (req, res) => {
 // Delete expense
 router.delete('/:id', auth, async (req, res) => {
     try {
-        const expense = await Expense.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        const expense = await Expense.findById(req.params.id);
         if (!expense) return res.status(404).json();
+
+        let hasPermission = expense.userId.toString() === req.user._id.toString();
+        if (!hasPermission && expense.groupId) {
+            const group = await Group.findOne({ _id: expense.groupId, members: req.user._id });
+            if (group) hasPermission = true;
+        }
+
+        if (!hasPermission) return res.status(403).json({ error: 'Permission denied' });
+
+        await Expense.findByIdAndDelete(req.params.id);
         res.json(expense);
     } catch (e) {
         res.status(500).json({ error: e.message });
