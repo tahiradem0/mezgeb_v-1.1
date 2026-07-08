@@ -7,6 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import EditExpenseModal from '../../components/EditExpenseModal';
+import ManageCategoryModal from '../../components/ManageCategoryModal';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -19,6 +20,8 @@ export default function GroupsScreen({ route }) {
   const [dateTo, setDateTo] = useState('');
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -86,9 +89,32 @@ export default function GroupsScreen({ route }) {
     }
   };
 
+  const handleCategorySave = (savedCategory) => {
+    setIsCategoryModalVisible(false);
+    setEditingCategory(null);
+    if (selectedCategory && selectedCategory._id === savedCategory._id) {
+      setSelectedCategory(savedCategory);
+    }
+    fetchData();
+  };
+
+  const handleCategoryDelete = (deletedId) => {
+    setIsCategoryModalVisible(false);
+    setEditingCategory(null);
+    if (selectedCategory && selectedCategory._id === deletedId) {
+      setSelectedCategory(null);
+    }
+    fetchData();
+  };
+
   const renderCategoryGrid = () => (
     <View style={styles.gridContainer}>
-      <Text style={styles.sectionTitle}>Select a Category</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Select a Category</Text>
+        <TouchableOpacity onPress={() => { setEditingCategory(null); setIsCategoryModalVisible(true); }}>
+          <Feather name="plus-circle" size={24} color="#2e2e2e" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.categorySelector}>
         {categories.map((cat) => {
           const catExpenses = expenses.filter(e => e.categoryId?._id === cat._id || e.categoryId === cat._id);
@@ -131,9 +157,11 @@ export default function GroupsScreen({ route }) {
             <Feather name="arrow-left" size={24} color="#2e2e2e" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{selectedCategory.icon || '📦'} {selectedCategory.name}</Text>
-          <TouchableOpacity style={styles.backBtn}>
-            <Feather name="download" size={20} color="#2e2e2e" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => { setEditingCategory(selectedCategory); setIsCategoryModalVisible(true); }}>
+              <Feather name="edit-2" size={20} color="#2e2e2e" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -278,7 +306,8 @@ export default function GroupsScreen({ route }) {
         renderCategoryDetail()
       )}
       
-      <EditExpenseModal 
+      {/* Expense Edit Modal */}
+      <EditExpenseModal
         visible={isEditModalVisible}
         expense={selectedExpense}
         categories={categories}
@@ -288,6 +317,19 @@ export default function GroupsScreen({ route }) {
         }}
         onSave={handleUpdateExpense}
         onDelete={handleDeleteExpense}
+      />
+
+      {/* Category Manage Modal */}
+      <ManageCategoryModal
+        visible={isCategoryModalVisible}
+        category={editingCategory}
+        groupId={groupId}
+        onClose={() => {
+          setIsCategoryModalVisible(false);
+          setEditingCategory(null);
+        }}
+        onSave={handleCategorySave}
+        onDelete={handleCategoryDelete}
       />
     </View>
   );

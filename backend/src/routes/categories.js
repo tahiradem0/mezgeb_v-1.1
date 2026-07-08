@@ -70,4 +70,29 @@ router.patch('/:id', auth, async (req, res) => {
     }
 });
 
+// Delete category
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const existingCategory = await Category.findById(req.params.id);
+        if (!existingCategory) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        // Allow deletion if the user owns it, or if it's a shared group category
+        if (existingCategory.userId.toString() !== req.user._id.toString() && !existingCategory.groupId) {
+            return res.status(403).json({ error: 'Not authorized to delete this personal category' });
+        }
+
+        await Category.findByIdAndDelete(req.params.id);
+        
+        // Also remove from expenses
+        const Expense = require('../models/Expense');
+        await Expense.updateMany({ categoryId: req.params.id }, { $unset: { categoryId: 1 } });
+
+        res.json({ message: 'Category deleted' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 module.exports = router;

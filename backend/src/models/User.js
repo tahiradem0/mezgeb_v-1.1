@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
     profileImage: { type: String },
     settings: {
         darkMode: { type: Boolean, default: false },
+        language: { type: String, default: 'English' },
+        currency: { type: String, default: 'ETB' },
         fontSize: { type: String, enum: ['small', 'medium', 'large'], default: 'medium' },
         budgetLimit: { type: Number, default: 10000 },
         budgetAlertEnabled: { type: Boolean, default: true },

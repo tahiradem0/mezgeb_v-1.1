@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 
-const API_BASE_URL = 'http://192.168.120.230:5000/api'; // using local backend url
+const API_BASE_URL = 'https://mezgeb-v-1-1.onrender.com/api'; // using live Render backend url
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -62,6 +62,8 @@ export const syncOfflineData = async () => {
     const queue = JSON.parse(await AsyncStorage.getItem(OFFLINE_QUEUE_KEY)) || [];
     if (queue.length === 0) return;
 
+    console.log(`Syncing ${queue.length} offline actions...`);
+
     // Process queue
     const remainingQueue = [];
     for (let action of queue) {
@@ -72,12 +74,18 @@ export const syncOfflineData = async () => {
           data: action.data,
         });
       } catch (err) {
-        console.error('Failed to sync action', action, err);
-        remainingQueue.push(action); // Retry later if it wasn't a 4xx error (e.g., 500)
+        console.error('Failed to sync action', action, err.message);
+        // Retry later if it wasn't a 4xx error (e.g. keep for 5xx or network failures)
+        if (!err.response || err.response.status >= 500) {
+          remainingQueue.push(action); 
+        }
       }
     }
 
     await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remainingQueue));
+    if (remainingQueue.length === 0) {
+      console.log('Offline queue synced successfully!');
+    }
   } catch (e) {
     console.error('Sync error', e);
   }

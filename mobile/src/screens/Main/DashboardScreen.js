@@ -109,13 +109,25 @@ export default function DashboardScreen() {
 
   const handleDeleteExpense = async (id) => {
     try {
-      await apiClient.delete(`/expenses/${id}`);
+      const { default: NetInfo } = await import('@react-native-community/netinfo');
+      const netInfo = await NetInfo.fetch();
+      
+      if (netInfo.isConnected) {
+        await apiClient.delete(`/expenses/${id}`);
+      } else {
+        const { addToOfflineQueue } = await import('../../api/client');
+        await addToOfflineQueue({ method: 'DELETE', url: `/expenses/${id}` });
+        // Optimistic UI update: instantly remove from UI cache
+        const newExpenses = expenses.filter(e => e._id !== id);
+        setExpenses(newExpenses);
+        await require('../../utils/cache').setCachedData('expenses_null', newExpenses);
+      }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
       fetchDashboardData(currentGroupId);
     } catch (error) {
       console.error('Error deleting expense:', error);
-      alert('Failed to delete expense');
+      Alert.alert('Error', 'Failed to delete expense');
     }
   };
 

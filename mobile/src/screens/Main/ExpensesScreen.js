@@ -6,6 +6,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { Feather } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+import ManageCategoryModal from '../../components/ManageCategoryModal';
 
 const CustomWebCalendar = ({ value, onChange, onClose }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date(value.getFullYear(), value.getMonth(), 1));
@@ -89,6 +90,7 @@ export default function ExpensesScreen({ navigation }) {
   const [previousReasons, setPreviousReasons] = useState([]);
   const [filteredReasons, setFilteredReasons] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -109,9 +111,15 @@ export default function ExpensesScreen({ navigation }) {
     try {
       const response = await apiClient.get('/categories');
       setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
+    } catch (e) {
+      console.log('Error fetching categories:', e);
     }
+  };
+
+  const handleCategorySave = (savedCategory) => {
+    setIsCategoryModalVisible(false);
+    setCategoryId(savedCategory._id);
+    fetchCategories(); // Refresh the list of categories
   };
 
   const handleSave = async () => {
@@ -139,8 +147,12 @@ export default function ExpensesScreen({ navigation }) {
     try {
       const netInfo = await NetInfo.fetch();
       if (netInfo.isConnected) {
+        // If online, generate ID so the backend uses it immediately
+        expenseData._id = require('../../utils/cache').generateObjectId();
         await apiClient.post('/expenses', expenseData);
       } else {
+        const tempId = require('../../utils/cache').generateObjectId();
+        expenseData._id = tempId;
         await addToOfflineQueue({
           method: 'POST',
           url: '/expenses',
@@ -163,7 +175,7 @@ export default function ExpensesScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Dashboard')}>
           <Feather name="arrow-left" size={24} color="#2e2e2e" />
@@ -191,7 +203,12 @@ export default function ExpensesScreen({ navigation }) {
 
         {/* Category Selection */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Category</Text>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
+            <Text style={[styles.label, {marginBottom: 0}]}>Category</Text>
+            <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)}>
+              <Feather name="plus-circle" size={24} color="#2e2e2e" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.categorySelector}>
             {categories.map((cat) => {
               const isSelected = categoryId === cat._id;
@@ -372,7 +389,16 @@ export default function ExpensesScreen({ navigation }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+
+      {/* Category Manage Modal */}
+      <ManageCategoryModal
+        visible={isCategoryModalVisible}
+        category={null} // We only add from here, not edit
+        onClose={() => setIsCategoryModalVisible(false)}
+        onSave={handleCategorySave}
+        onDelete={() => {}} // No delete from here
+      />
+    </KeyboardAvoidingView>
   );
 }
 

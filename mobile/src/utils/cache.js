@@ -43,3 +43,11 @@ export const clearAllCache = async () => {
     console.warn('Error clearing cache:', e);
   }
 };
+
+export const generateObjectId = () => {
+  const timestamp = Math.floor(Date.now() / 1000).toString(16);
+  const machineId = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+  const processId = Math.floor(Math.random() * 65535).toString(16).padStart(4, '0');
+  const counter = Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+  return timestamp + machineId + processId + counter;
+};
