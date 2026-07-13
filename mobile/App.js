@@ -55,12 +55,16 @@ const AppRoot = () => {
     });
 
     async function configurePushNotifications() {
-      const { status } = await Notifications.getPermissionsAsync();
-      let finalStatus = status;
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+        let finalStatus = status;
 
-      if (finalStatus !== 'granted') {
-        const { status: newStatus } = await Notifications.requestPermissionsAsync();
-        finalStatus = newStatus;
+        if (finalStatus !== 'granted') {
+          const { status: newStatus } = await Notifications.requestPermissionsAsync();
+          finalStatus = newStatus;
+        }
+      } catch (error) {
+        console.warn('Push notifications are not supported in Expo Go.');
       }
     }
     configurePushNotifications();

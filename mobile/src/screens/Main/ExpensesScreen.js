@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput as RNTextInput, Keyboard, Platform, Image, KeyboardAvoidingView } from 'react-native';
+import { getCache, storeCache } from '../../utils/cache';
+import { setIntentionalBackground } from '../../components/BiometricWrapper';
 import { Text , useTheme } from 'react-native-paper';
 import { apiClient, addToOfflineQueue } from '../../api/client';
 import NetInfo from '@react-native-community/netinfo';
@@ -254,12 +256,14 @@ export default function ExpensesScreen({ navigation }) {
             <TouchableOpacity 
               onPress={async () => {
                 try {
+                  setIntentionalBackground(true);
                   let result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    mediaTypes: ['images'], // Use array instead of MediaTypeOptions string for SDK 54
                     allowsEditing: true,
                     quality: 0.5,
                     base64: true
                   });
+                  setIntentionalBackground(false);
                   if (!result.canceled) {
                     const base64Data = result.assets[0].base64;
                     if (base64Data) {

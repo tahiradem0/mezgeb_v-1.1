@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const PREFIX = 'mezgeb_cache_';
+const PREFIX = 'haiil_cache_';
 
 /**
  * Store data in the local cache

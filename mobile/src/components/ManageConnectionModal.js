@@ -4,6 +4,7 @@ import { Text, useTheme } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
+import NetInfo from '@react-native-community/netinfo';
 import { createGroup, joinGroup, apiClient } from '../api/client';
 
 export default function ManageConnectionModal({ visible, onClose, onSuccess }) {
@@ -73,6 +74,11 @@ export default function ManageConnectionModal({ visible, onClose, onSuccess }) {
   };
 
   const handleCreate = async () => {
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) {
+      Alert.alert('Offline', 'Please connect to the internet to create a new group.');
+      return;
+    }
     if (!groupName.trim()) {
       Alert.alert('Error', 'Please enter a group name');
       return;
@@ -92,6 +98,11 @@ export default function ManageConnectionModal({ visible, onClose, onSuccess }) {
   };
 
   const handleJoin = async () => {
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) {
+      Alert.alert('Offline', 'Please connect to the internet to join a group.');
+      return;
+    }
     if (!partnerPhone.trim() || !joinConnectionId.trim()) {
       Alert.alert('Error', 'Please enter partner phone number and connection ID');
       return;

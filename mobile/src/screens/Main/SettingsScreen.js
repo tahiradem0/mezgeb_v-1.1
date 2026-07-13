@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform, Linking } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { apiClient, addToOfflineQueue } from '../../api/client';
+import { setIntentionalBackground } from '../../components/BiometricWrapper';
 import NetInfo from '@react-native-community/netinfo';
 import { ThemeContext } from '../../context/ThemeContext';
 import ManageConnectionModal from '../../components/ManageConnectionModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 
 export default function SettingsScreen() {
   const { theme, toggleDarkMode } = useContext(ThemeContext);
@@ -23,6 +25,7 @@ export default function SettingsScreen() {
     notificationsEnabled: true
   });
   const [isConnectionModalVisible, setConnectionModalVisible] = useState(false);
+  const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -90,13 +93,14 @@ export default function SettingsScreen() {
 
   const pickImage = async () => {
     try {
+      setIntentionalBackground(true);
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,
-        base64: true,
       });
+      setIntentionalBackground(false);
 
       if (!result.canceled) {
         const asset = result.assets[0];
@@ -209,7 +213,7 @@ export default function SettingsScreen() {
           
           <View style={styles.divider} />
           
-          <TouchableOpacity style={styles.settingsItem}>
+          <TouchableOpacity style={styles.settingsItem} onPress={() => setPasswordModalVisible(true)}>
             <View style={styles.settingsItemLeft}>
               <View style={styles.settingsIconBox}>
                 <Feather name="lock" size={20} color={theme.colors.textSecondary} />
@@ -267,7 +271,9 @@ export default function SettingsScreen() {
         <View style={styles.cardBlock}>
           {renderSettingItem('help-circle', 'Help & FAQ')}
           <View style={styles.divider} />
-          {renderSettingItem('message-circle', 'Contact Us')}
+          {renderSettingItem('message-circle', 'Contact Us', null, Feather, () => {
+            Linking.openURL('tel:+251978787960').catch((err) => Alert.alert("Error", "Could not open dialer"));
+          })}
         </View>
       </View>
 
@@ -282,9 +288,13 @@ export default function SettingsScreen() {
         visible={isConnectionModalVisible} 
         onClose={() => setConnectionModalVisible(false)}
         onSuccess={() => {
-          // You could trigger a refresh here if needed
           Alert.alert("Check Dashboard", "Your new group space should now be available!");
         }}
+      />
+
+      <ChangePasswordModal 
+        visible={isPasswordModalVisible}
+        onClose={() => setPasswordModalVisible(false)}
       />
     </ScrollView>
   );

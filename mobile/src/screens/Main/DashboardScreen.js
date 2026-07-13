@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Image, RefreshControl, PanResponder } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Image, RefreshControl, PanResponder, Alert } from 'react-native';
 import { Text, Title, useTheme } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
@@ -10,7 +10,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import EditExpenseModal from '../../components/EditExpenseModal';
-import { getCache, storeCache, setCachedData } from '../../utils/cache';
+import NotificationsModal from '../../components/NotificationsModal';
+import { getCache, storeCache } from '../../utils/cache';
 import NetInfo from '@react-native-community/netinfo';
 
 const screenWidth = Dimensions.get('window').width;
@@ -33,6 +34,26 @@ export default function DashboardScreen() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isNotificationsModalVisible, setIsNotificationsModalVisible] = useState(false);
+
+  const unreadCount = React.useMemo(() => {
+    if (!expenses || !user) return 0;
+    let count = 0;
+    const today = new Date();
+    const thisMonthTotal = expenses.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+    }).reduce((s, e) => s + e.amount, 0);
+    
+    const limit = user?.settings?.budgetLimit || 10000;
+    const alertEnabled = user?.settings?.budgetAlertEnabled !== false;
+    
+    if (thisMonthTotal > limit && alertEnabled) count++;
+    else if (thisMonthTotal > limit * 0.8 && alertEnabled) count++;
+    
+    if (expenses.length > 0) count++; // Recent activity
+    return count;
+  }, [expenses, user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -133,7 +154,15 @@ export default function DashboardScreen() {
 
   const handleUpdateExpense = async (updatedExpense) => {
     try {
-      await apiClient.patch(`/expenses/${updatedExpense._id}`, updatedExpense);
+      const netInfo = await NetInfo.fetch();
+      if (netInfo.isConnected) {
+        await apiClient.patch(`/expenses/${updatedExpense._id}`, updatedExpense);
+      } else {
+        await addToOfflineQueue({ method: 'PATCH', url: `/expenses/${updatedExpense._id}`, data: updatedExpense });
+        const newExpenses = expenses.map(e => e._id === updatedExpense._id ? updatedExpense : e);
+        setExpenses(newExpenses);
+        await storeCache(`dashboard_expenses_${currentGroupId || 'personal'}`, newExpenses);
+      }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
       fetchDashboardData(currentGroupId);
@@ -154,7 +183,7 @@ export default function DashboardScreen() {
         // Optimistic UI update: instantly remove from UI cache
         const newExpenses = expenses.filter(e => e._id !== id);
         setExpenses(newExpenses);
-        await setCachedData('expenses_null', newExpenses);
+        await storeCache(`dashboard_expenses_${currentGroupId || 'personal'}`, newExpenses);
       }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
@@ -341,11 +370,16 @@ export default function DashboardScreen() {
           <Title style={styles.usernameText}>{user ? user.username : 'User'}</Title>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={{marginRight: 15, position: 'relative', padding: 5}}>
+          <TouchableOpacity 
+            style={{marginRight: 15, position: 'relative', padding: 5}}
+            onPress={() => setIsNotificationsModalVisible(true)}
+          >
             <MaterialCommunityIcons name="bell-outline" size={26} color="#2e2e2e" />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>1</Text>
-            </View>
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           {user?.profileImage ? (
             <Image source={{uri: user.profileImage}} style={styles.avatarImg} />
@@ -652,7 +686,6 @@ export default function DashboardScreen() {
           )
         })}
       </View>
-
       </View>
 
       <EditExpenseModal 
@@ -667,6 +700,12 @@ export default function DashboardScreen() {
         onDelete={handleDeleteExpense}
       />
 
+      <NotificationsModal 
+        visible={isNotificationsModalVisible}
+        onClose={() => setIsNotificationsModalVisible(false)}
+        expenses={expenses}
+        user={user}
+      />
     </ScrollView>
   );
 }

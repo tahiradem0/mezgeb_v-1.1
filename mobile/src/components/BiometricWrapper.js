@@ -5,6 +5,9 @@ import { Feather } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+export let isIntentionalBackground = false;
+export const setIntentionalBackground = (val) => { isIntentionalBackground = val; };
+
 export default function BiometricWrapper({ children }) {
   const theme = useTheme();
   const [isLocked, setIsLocked] = useState(false);
@@ -20,7 +23,12 @@ export default function BiometricWrapper({ children }) {
         nextAppState === 'active'
       ) {
         // App has come to the foreground!
-        checkBiometricSetting();
+        if (isIntentionalBackground) {
+          // Bypassing biometric check because user intentionally opened a system UI (like Image Picker)
+          // We don't reset it here immediately because it might still be resolving the image picker promise
+        } else {
+          checkBiometricSetting();
+        }
       }
       appState.current = nextAppState;
     });
@@ -59,7 +67,7 @@ export default function BiometricWrapper({ children }) {
       }
 
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock Mezgeb',
+        promptMessage: 'Unlock Haiil',
         fallbackLabel: 'Use Passcode',
       });
 

@@ -73,4 +73,22 @@ router.patch('/settings', auth, async (req, res) => {
     }
 });
 
+// Update password
+router.patch('/password', auth, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        
+        // Verify current password
+        if (!(await req.user.comparePassword(currentPassword))) {
+            return res.status(401).json({ error: 'Incorrect current password' });
+        }
+        
+        req.user.password = newPassword;
+        await req.user.save();
+        res.json({ message: 'Password updated successfully' });
+    } catch (e) {
+        res.status(400).json({ error: e.message });
+    }
+});
+
 module.exports = router;

@@ -134,8 +134,12 @@ export default function AppNavigator() {
 
   useEffect(() => {
     const bootstrapAsync = async () => {
-      // Intentionally DO NOT auto-login. The user must explicitly login on fresh app start.
-      setUserToken(null);
+      try {
+        const token = await AsyncStorage.getItem('token');
+        setUserToken(token);
+      } catch (e) {
+        setUserToken(null);
+      }
       setIsLoading(false);
     };
     bootstrapAsync();

@@ -4,7 +4,8 @@ import {
   View, Text, StyleSheet, Modal, TouchableOpacity, 
   TextInput, ScrollView, Platform, KeyboardAvoidingView, Image, ActivityIndicator
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { setIntentionalBackground } from './BiometricWrapper';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -195,12 +196,14 @@ export default function EditExpenseModal({ visible, expense, categories, onClose
               <TouchableOpacity 
                 onPress={async () => {
                   try {
+                    setIntentionalBackground(true);
                     let result = await ImagePicker.launchImageLibraryAsync({
-                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                      mediaTypes: ['images'],
                       allowsEditing: true,
                       quality: 0.5,
                       base64: true
                     });
+                    setIntentionalBackground(false);
                     if (!result.canceled) {
                       const base64Data = result.assets[0].base64;
                       if (base64Data) {

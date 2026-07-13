@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-export const API_BASE_URL = 'http://localhost:5000/api'; // Point to local backend to test new changes
+export const API_BASE_URL = 'http://192.168.111.230:5000/api'; // Point to local network backend for Expo Go
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

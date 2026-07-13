@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Text, Dimensions, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Text, Dimensions, Platform, Alert } from 'react-native';
 import { Title , useTheme } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiClient } from '../../api/client';
+import { apiClient, addToOfflineQueue } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
+import NetInfo from '@react-native-community/netinfo';
 import EditExpenseModal from '../../components/EditExpenseModal';
 
 export default function ReportScreen() {
@@ -87,7 +88,15 @@ export default function ReportScreen() {
 
   const handleUpdateExpense = async (updatedExpense) => {
     try {
-      await apiClient.patch(`/expenses/${updatedExpense._id}`, updatedExpense);
+      const netInfo = await NetInfo.fetch();
+      if (netInfo.isConnected) {
+        await apiClient.patch(`/expenses/${updatedExpense._id}`, updatedExpense);
+      } else {
+        await addToOfflineQueue({ method: 'PATCH', url: `/expenses/${updatedExpense._id}`, data: updatedExpense });
+        const newExpenses = expenses.map(e => e._id === updatedExpense._id ? updatedExpense : e);
+        setExpenses(newExpenses);
+        await storeCache(`report_expenses_${groupId || 'personal'}`, newExpenses);
+      }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
       fetchData(groupId);
@@ -99,13 +108,21 @@ export default function ReportScreen() {
 
   const handleDeleteExpense = async (id) => {
     try {
-      await apiClient.delete(`/expenses/${id}`);
+      const netInfo = await NetInfo.fetch();
+      if (netInfo.isConnected) {
+        await apiClient.delete(`/expenses/${id}`);
+      } else {
+        await addToOfflineQueue({ method: 'DELETE', url: `/expenses/${id}` });
+        const newExpenses = expenses.filter(e => e._id !== id);
+        setExpenses(newExpenses);
+        await storeCache(`report_expenses_${groupId || 'personal'}`, newExpenses);
+      }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
       fetchData(groupId);
     } catch (error) {
       console.error('Error deleting expense:', error);
-      alert('Failed to delete expense');
+      Alert.alert('Error', 'Failed to delete expense');
     }
   };
 
