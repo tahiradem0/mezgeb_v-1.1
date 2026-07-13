@@ -1,14 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Text, Dimensions, Platform } from 'react-native';
-import { Title } from 'react-native-paper';
+import { Title , useTheme } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
 import EditExpenseModal from '../../components/EditExpenseModal';
 
-export default function ReportScreen({ route }) {
-  const groupId = route?.params?.groupId;
+export default function ReportScreen() {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const [groupId, setGroupId] = useState(null);
+  const activeGroupRef = useRef(null);
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,17 +27,24 @@ export default function ReportScreen({ route }) {
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
-    }, [groupId])
+      const loadGroupId = async () => {
+        const stored = await AsyncStorage.getItem('activeGroupId');
+        const active = stored === 'personal' || !stored ? null : stored;
+        setGroupId(active);
+        activeGroupRef.current = active;
+        fetchData(active);
+      };
+      loadGroupId();
+    }, [])
   );
 
-  const fetchData = async () => {
+  const fetchData = async (currentGroupId) => {
     setIsLoading(true);
     try {
       let expensesUrl = '/expenses';
       let categoriesUrl = '/categories';
       
-      const contextKey = groupId || 'personal';
+      const contextKey = currentGroupId || 'personal';
       const catCacheKey = `report_categories_${contextKey}`;
       const expCacheKey = `report_expenses_${contextKey}`;
 
@@ -49,9 +60,9 @@ export default function ReportScreen({ route }) {
       }
 
       // 2. BACKGROUND SYNC
-      if (groupId) {
-        expensesUrl += `?groupId=${groupId}`;
-        categoriesUrl += `?groupId=${groupId}`;
+      if (currentGroupId) {
+        expensesUrl += `?groupId=${currentGroupId}`;
+        categoriesUrl += `?groupId=${currentGroupId}`;
       }
 
       const [expRes, catRes] = await Promise.all([
@@ -59,6 +70,8 @@ export default function ReportScreen({ route }) {
         apiClient.get(categoriesUrl)
       ]);
       
+      if (currentGroupId !== activeGroupRef.current) return; // Stale fetch
+
       // 3. CACHE UPDATE & RE-RENDER
       setExpenses(expRes.data);
       setCategories(catRes.data);
@@ -77,7 +90,7 @@ export default function ReportScreen({ route }) {
       await apiClient.patch(`/expenses/${updatedExpense._id}`, updatedExpense);
       setIsEditModalVisible(false);
       setSelectedExpense(null);
-      fetchData();
+      fetchData(groupId);
     } catch (error) {
       console.error('Error updating expense:', error);
       alert('Failed to update expense');
@@ -89,7 +102,7 @@ export default function ReportScreen({ route }) {
       await apiClient.delete(`/expenses/${id}`);
       setIsEditModalVisible(false);
       setSelectedExpense(null);
-      fetchData();
+      fetchData(groupId);
     } catch (error) {
       console.error('Error deleting expense:', error);
       alert('Failed to delete expense');
@@ -245,6 +258,24 @@ export default function ReportScreen({ route }) {
                 </View>
                 <View style={{flex: 2.2, paddingRight: 5, justifyContent: 'center'}}>
                   <Text style={styles.tableCellReason} numberOfLines={2}>{item.reason}</Text>
+                  {groupId && item.userId?.username && (
+                    <View style={{
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      backgroundColor: '#e8f5e9', 
+                      paddingHorizontal: 8, 
+                      paddingVertical: 3, 
+                      borderRadius: 12, 
+                      alignSelf: 'flex-start', 
+                      marginTop: 6,
+                      maxWidth: '100%'
+                    }}>
+                      <Feather name="user" size={10} color="#2e7d32" style={{marginRight: 4}} />
+                      <Text style={{fontSize: 10, color: '#2e7d32', fontWeight: '700', flexShrink: 1}} numberOfLines={1}>
+                        {item.userId.username}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <View style={{flex: 2.6, alignItems: 'center', justifyContent: 'center'}}>
                   <View style={styles.tableCategoryPill}>
@@ -282,10 +313,10 @@ export default function ReportScreen({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     padding: 20,
     paddingTop: 60,
   },
@@ -298,16 +329,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   filterBtn: {
     width: 40,
     height: 40,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
@@ -316,18 +347,18 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     paddingHorizontal: 15,
     height: 50,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: theme.colors.border,
   },
   searchIcon: {
     marginRight: 10,
@@ -335,21 +366,21 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     outlineStyle: 'none',
   },
   filterPanel: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     padding: 15,
     borderRadius: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: theme.colors.border,
   },
   filterLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 8,
   },
   filterRow: {
@@ -361,38 +392,38 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: theme.colors.border,
     borderRadius: 8,
     paddingHorizontal: 10,
-    color: '#2e2e2e',
-    backgroundColor: '#FAFAFA',
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.background,
   },
   filterToText: {
     marginHorizontal: 10,
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontSize: 14,
   },
   clearFilterBtn: {
     marginTop: 20,
     paddingVertical: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#eee',
     alignItems: 'center',
   },
   clearFilterText: {
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     fontWeight: '600',
     fontSize: 14,
   },
   tableContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: theme.colors.border,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
     shadowRadius: 5,
@@ -401,15 +432,15 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
   },
   tableHeaderText: {
     fontSize: 12,
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontWeight: '600',
   },
   tableRow: {
@@ -417,22 +448,22 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8f8f8',
+    borderBottomColor: theme.colors.border,
     alignItems: 'center',
   },
   tableCellDate: {
     fontSize: 12,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   tableCellReason: {
     fontSize: 13,
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     fontWeight: '500',
   },
   tableCategoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: theme.colors.background,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -444,12 +475,12 @@ const styles = StyleSheet.create({
   },
   tableCategoryText: {
     fontSize: 11,
-    color: '#666',
+    color: theme.colors.textSecondary,
     fontWeight: '500',
   },
   tableCellAmount: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
 });

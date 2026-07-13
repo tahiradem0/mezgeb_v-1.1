@@ -1,3 +1,4 @@
+import { useTheme } from 'react-native-paper';
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert, TouchableOpacity, Text, Dimensions, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { apiClient } from '../../api/client';
@@ -8,6 +9,8 @@ import { TextInput } from 'react-native';
 const screenHeight = Dimensions.get('window').height;
 
 export default function RegisterScreen({ navigation, route }) {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -121,10 +124,10 @@ export default function RegisterScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
   },
   scrollContent: {
     minHeight: screenHeight,
@@ -143,7 +146,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#333333',
+    backgroundColor: theme.colors.textPrimary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -151,17 +154,17 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
   },
   authTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 8,
   },
   authSubtitle: {
     fontSize: 15,
-    color: '#888888',
+    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
   formContainer: {
@@ -173,15 +176,15 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 8,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: theme.colors.border,
     borderRadius: 16,
     paddingHorizontal: 15,
     height: 56,
@@ -193,13 +196,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: 16,
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   eyeIcon: {
     padding: 10,
   },
   loginBtn: {
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
     borderRadius: 16,
     height: 56,
     justifyContent: 'center',
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   loginBtnText: {
-    color: '#ffffff',
+    color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -223,11 +226,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: '#888888',
+    color: theme.colors.textSecondary,
   },
   footerLink: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   }
 });

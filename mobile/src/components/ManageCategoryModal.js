@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, TextInput, Modal, KeyboardAvoidingView } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native-paper';
+import { Text, ActivityIndicator , useTheme } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
 import { apiClient, addToOfflineQueue } from '../api/client';
 import { generateObjectId } from '../utils/cache';
 import NetInfo from '@react-native-community/netinfo';
 
 export default function ManageCategoryModal({ visible, category, groupId, onClose, onSave, onDelete }) {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('📦');
   const [color, setColor] = useState('#4CAF50');
@@ -185,14 +187,14 @@ export default function ManageCategoryModal({ visible, category, groupId, onClos
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 25,
@@ -207,11 +209,11 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   closeBtn: {
     padding: 5,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
     borderRadius: 20,
   },
   formGroup: {
@@ -225,12 +227,12 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.colors.border,
     borderRadius: 16,
     padding: 16,
     fontSize: 16,
-    backgroundColor: '#FAFAFA',
-    color: '#2e2e2e',
+    backgroundColor: theme.colors.background,
+    color: theme.colors.textPrimary,
   },
   emojiContainer: {
     flexDirection: 'row',
@@ -241,15 +243,15 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   emojiCircleActive: {
-    borderColor: '#2e2e2e',
-    backgroundColor: '#ffffff',
+    borderColor: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surface,
   },
   emojiText: {
     fontSize: 24,
@@ -268,7 +270,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   colorCircleActive: {
-    borderColor: '#2e2e2e',
+    borderColor: theme.colors.textPrimary,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -289,7 +291,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveBtnText: {
-    color: '#ffffff',
+    color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },

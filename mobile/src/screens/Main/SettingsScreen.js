@@ -1,22 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { apiClient } from '../../api/client';
+import { apiClient, addToOfflineQueue } from '../../api/client';
+import NetInfo from '@react-native-community/netinfo';
+import { ThemeContext } from '../../context/ThemeContext';
+import ManageConnectionModal from '../../components/ManageConnectionModal';
 
 export default function SettingsScreen() {
+  const { theme, toggleDarkMode } = useContext(ThemeContext);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
   const [settings, setSettings] = useState({
-    darkMode: false,
     language: 'English',
+    darkMode: false,
     currency: 'ETB',
-    budgetLimit: 10000,
-    notificationsEnabled: true,
+    budgetLimit: '5000',
+    notificationsEnabled: true
   });
+  const [isConnectionModalVisible, setConnectionModalVisible] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -52,22 +58,29 @@ export default function SettingsScreen() {
     await AsyncStorage.setItem('currentUser', JSON.stringify(updatedUser));
 
     try {
-      const { default: NetInfo } = await import('@react-native-community/netinfo');
       const netInfo = await NetInfo.fetch();
       
+      const payload = { [key]: value };
+      if (key === 'biometricEnabled') {
+        // Optimistically update top level user
+        const updatedUserWithBio = { ...user, biometricEnabled: value };
+        setUser(updatedUserWithBio);
+        await AsyncStorage.setItem('currentUser', JSON.stringify(updatedUserWithBio));
+      }
+
       if (netInfo.isConnected) {
-        const res = await apiClient.patch('/auth/settings', { [key]: value });
+        const res = await apiClient.patch('/auth/settings', payload);
         setUser(res.data);
         if (res.data.settings) setSettings(res.data.settings);
         await AsyncStorage.setItem('currentUser', JSON.stringify(res.data));
       } else {
-        const { addToOfflineQueue } = await import('../../api/client');
         await addToOfflineQueue({
           method: 'PATCH',
           url: '/auth/settings',
           data: { [key]: value }
         });
       }
+      if (key === 'darkMode') toggleDarkMode(value);
     } catch (error) {
       console.error('Error updating setting:', error);
       Alert.alert('Error', 'Failed to save setting');
@@ -137,13 +150,13 @@ export default function SettingsScreen() {
     <TouchableOpacity style={styles.settingsItem} onPress={onPress} disabled={!onPress}>
       <View style={styles.settingsItemLeft}>
         <View style={styles.settingsIconBox}>
-          <IconComponent name={iconName} size={20} color="#666666" />
+          <IconComponent name={iconName} size={20} color={theme.colors.textSecondary} />
         </View>
         <Text style={styles.settingsLabel}>{label}</Text>
       </View>
       <View style={styles.settingsItemRight}>
         {rightText && <Text style={styles.settingsRightText}>{rightText}</Text>}
-        {onPress && <Feather name="chevron-right" size={20} color="#cccccc" />}
+        {onPress && <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />}
       </View>
     </TouchableOpacity>
   );
@@ -152,7 +165,7 @@ export default function SettingsScreen() {
     <View style={styles.settingsItem}>
       <View style={styles.settingsItemLeft}>
         <View style={styles.settingsIconBox}>
-          <Feather name={iconName} size={20} color="#666666" />
+          <Feather name={iconName} size={20} color={theme.colors.textSecondary} />
         </View>
         <Text style={styles.settingsLabel}>{label}</Text>
       </View>
@@ -160,7 +173,7 @@ export default function SettingsScreen() {
         <Switch 
           value={value} 
           onValueChange={onValueChange} 
-          trackColor={{ false: '#e0e0e0', true: '#4CAF50' }}
+          trackColor={{ false: theme.colors.border, true: theme.colors.success }}
           thumbColor={Platform.OS === 'ios' ? '#ffffff' : (value ? '#ffffff' : '#f4f3f4')}
         />
       </View>
@@ -199,12 +212,26 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.settingsItem}>
             <View style={styles.settingsItemLeft}>
               <View style={styles.settingsIconBox}>
-                <Feather name="lock" size={20} color="#666666" />
+                <Feather name="lock" size={20} color={theme.colors.textSecondary} />
               </View>
               <Text style={styles.settingsLabel}>Change Password</Text>
             </View>
             <View style={styles.settingsItemRight}>
-              <Feather name="chevron-right" size={20} color="#cccccc" />
+              <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
+            </View>
+          </TouchableOpacity>
+          
+          <View style={styles.divider} />
+
+          <TouchableOpacity style={styles.settingsItem} onPress={() => setConnectionModalVisible(true)}>
+            <View style={styles.settingsItemLeft}>
+              <View style={styles.settingsIconBox}>
+                <Feather name="users" size={20} color={theme.colors.textSecondary} />
+              </View>
+              <Text style={styles.settingsLabel}>Manage Connections</Text>
+            </View>
+            <View style={styles.settingsItemRight}>
+              <Feather name="chevron-right" size={20} color={theme.colors.textMuted} />
             </View>
           </TouchableOpacity>
         </View>
@@ -229,7 +256,9 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           {renderSettingItem('target', 'Budget Limit', `${settings.currency} ${settings.budgetLimit}`, Feather, handleBudgetChange)}
           <View style={styles.divider} />
-          {renderToggleItem('bell', 'Notifications', settings.notificationsEnabled, (v) => updateSetting('notificationsEnabled', v))}
+          {renderToggleItem('bell', 'Budget Alerts', settings.budgetAlertEnabled, (v) => updateSetting('budgetAlertEnabled', v))}
+          <View style={styles.divider} />
+          {renderToggleItem('shield', 'Biometric Lock', user?.biometricEnabled || false, (v) => updateSetting('biometricEnabled', v))}
         </View>
       </View>
 
@@ -243,37 +272,46 @@ export default function SettingsScreen() {
       </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Feather name="log-out" size={20} color="#ff3b30" style={{ marginRight: 10 }} />
+        <Feather name="log-out" size={20} color={theme.colors.error} style={{ marginRight: 10 }} />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
 
       <View style={{ height: 100 }} />
+
+      <ManageConnectionModal 
+        visible={isConnectionModalVisible} 
+        onClose={() => setConnectionModalVisible(false)}
+        onSuccess={() => {
+          // You could trigger a refresh here if needed
+          Alert.alert("Check Dashboard", "Your new group space should now be available!");
+        }}
+      />
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAFA' },
+const createStyles = (theme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
   header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20 },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: '#2e2e2e' },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: theme.colors.textPrimary },
   sectionContainer: { paddingHorizontal: 20, marginBottom: 25 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#2e2e2e', marginBottom: 12 },
-  profileCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOpacity: 0.03, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, elevation: 2 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.textPrimary, marginBottom: 12 },
+  profileCard: { backgroundColor: theme.colors.surface, borderRadius: 20, padding: 20, shadowColor: '#000', shadowOpacity: 0.03, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, elevation: 2 },
   profileInfoContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   profileImageContainer: { position: 'relative', marginRight: 20 },
   profileImage: { width: 60, height: 60, borderRadius: 30 },
-  changePhotoBtn: { position: 'absolute', bottom: -5, right: -5, backgroundColor: '#2e2e2e', width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#ffffff' },
+  changePhotoBtn: { position: 'absolute', bottom: -5, right: -5, backgroundColor: theme.colors.primary, width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: theme.colors.surface },
   profileTextInfo: { justifyContent: 'center' },
-  profileUsername: { fontSize: 18, fontWeight: '700', color: '#2e2e2e', marginBottom: 4 },
-  profilePhone: { fontSize: 14, color: '#888888' },
-  divider: { height: 1, backgroundColor: '#f0f0f0', marginVertical: 5 },
-  cardBlock: { backgroundColor: '#ffffff', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 20, shadowColor: '#000', shadowOpacity: 0.03, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, elevation: 2 },
+  profileUsername: { fontSize: 18, fontWeight: '700', color: theme.colors.textPrimary, marginBottom: 4 },
+  profilePhone: { fontSize: 14, color: theme.colors.textSecondary },
+  divider: { height: 1, backgroundColor: theme.colors.border, marginVertical: 5 },
+  cardBlock: { backgroundColor: theme.colors.surface, borderRadius: 20, paddingVertical: 10, paddingHorizontal: 20, shadowColor: '#000', shadowOpacity: 0.03, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, elevation: 2 },
   settingsItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   settingsItemLeft: { flexDirection: 'row', alignItems: 'center' },
-  settingsIconBox: { width: 36, height: 36, backgroundColor: '#FAFAFA', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  settingsLabel: { fontSize: 16, fontWeight: '500', color: '#2e2e2e' },
+  settingsIconBox: { width: 36, height: 36, backgroundColor: theme.colors.surfaceElevated, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  settingsLabel: { fontSize: 16, fontWeight: '500', color: theme.colors.textPrimary },
   settingsItemRight: { flexDirection: 'row', alignItems: 'center' },
-  settingsRightText: { fontSize: 14, color: '#888888', marginRight: 10 },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, marginTop: 10, backgroundColor: '#ffebe9', paddingVertical: 16, borderRadius: 16 },
-  logoutText: { fontSize: 16, fontWeight: '600', color: '#ff3b30' }
+  settingsRightText: { fontSize: 14, color: theme.colors.textSecondary, marginRight: 10 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, marginTop: 10, backgroundColor: theme.colors.surfaceElevated, paddingVertical: 16, borderRadius: 16 },
+  logoutText: { fontSize: 16, fontWeight: '600', color: theme.colors.error }
 });

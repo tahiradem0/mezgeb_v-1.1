@@ -3035,30 +3035,31 @@ function renderJoinForm() {
 
     const submitBtn = utils.createElement('button', { className: 'btn btn-primary btn-full', textContent: 'Connect' });
 
-    submitBtn.onclick = async function handleAddCategory() {
-        const name = nameInput.value.trim();
-        const icon = iconInput.value.trim();
+    submitBtn.onclick = async function handleJoinGroup() {
+        const phone = phoneInput.value.trim();
+        const connectionId = idInput.value.trim();
 
-        if (!name || !icon) return utils.showToast('Name and icon required', 'error');
+        if (!phone || !connectionId) return utils.showToast('Phone and Connection ID required', 'error');
 
         try {
-            submitBtn.textContent = 'Saving...';
-            // Passing groupId if present (for shared categories)
-            await api.createCategory({
-                name,
-                icon,
-                groupId: appState.currentGroupId || undefined
+            submitBtn.textContent = 'Connecting...';
+            if (typeof api.joinGroup !== 'function') throw new Error('API Join function missing');
+            
+            await api.joinGroup({
+                partnerPhone: phone,
+                connectionId: connectionId
             });
 
-            utils.showToast('Category added', 'success');
+            utils.showToast('Successfully connected to group!', 'success');
             utils.hideModal('dynamic-modal');
-            renderCategoriesSettings();
+            await initGroups();
+            renderGroupsSettings();
 
-            // Also refresh home if we are there
+            // Refresh home if we are there
             if (appState.currentPage === 'home') renderHome();
         } catch (e) {
             utils.showToast(e.message, 'error');
-            submitBtn.textContent = 'Save Category';
+            submitBtn.textContent = 'Connect';
         }
     };
 

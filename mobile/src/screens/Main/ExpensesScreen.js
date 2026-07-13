@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput as RNTextInput, Keyboard, Platform, Image } from 'react-native';
-import { Text } from 'react-native-paper';
+import React, { useState, useCallback, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput as RNTextInput, Keyboard, Platform, Image, KeyboardAvoidingView } from 'react-native';
+import { Text , useTheme } from 'react-native-paper';
 import { apiClient, addToOfflineQueue } from '../../api/client';
 import NetInfo from '@react-native-community/netinfo';
 import { Feather } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ManageCategoryModal from '../../components/ManageCategoryModal';
 
 const CustomWebCalendar = ({ value, onChange, onClose }) => {
@@ -77,10 +79,14 @@ const CustomWebCalendar = ({ value, onChange, onClose }) => {
 };
 
 export default function ExpensesScreen({ navigation }) {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState([]);
+  const [groupId, setGroupId] = useState(null);
+  const activeGroupRef = useRef(null);
   const [dateType, setDateType] = useState('today'); 
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -92,14 +98,25 @@ export default function ExpensesScreen({ navigation }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
 
-  useEffect(() => {
-    fetchCategories();
-    fetchPreviousReasons();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const loadGroupId = async () => {
+        const stored = await AsyncStorage.getItem('activeGroupId');
+        const active = stored === 'personal' || !stored ? null : stored;
+        setGroupId(active);
+        activeGroupRef.current = active;
+        fetchCategories(active);
+        fetchPreviousReasons(active);
+      };
+      loadGroupId();
+    }, [])
+  );
 
-  const fetchPreviousReasons = async () => {
+  const fetchPreviousReasons = async (currentGroupId) => {
     try {
-      const response = await apiClient.get('/expenses');
+      const url = currentGroupId ? `/expenses?groupId=${currentGroupId}` : '/expenses';
+      const response = await apiClient.get(url);
+      if (currentGroupId !== activeGroupRef.current) return;
       const uniqueReasons = [...new Set(response.data.map(exp => exp.reason).filter(Boolean))];
       setPreviousReasons(uniqueReasons);
     } catch (error) {
@@ -107,9 +124,11 @@ export default function ExpensesScreen({ navigation }) {
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (currentGroupId) => {
     try {
-      const response = await apiClient.get('/categories');
+      const url = currentGroupId ? `/categories?groupId=${currentGroupId}` : '/categories';
+      const response = await apiClient.get(url);
+      if (currentGroupId !== activeGroupRef.current) return;
       setCategories(response.data);
     } catch (e) {
       console.log('Error fetching categories:', e);
@@ -119,7 +138,7 @@ export default function ExpensesScreen({ navigation }) {
   const handleCategorySave = (savedCategory) => {
     setIsCategoryModalVisible(false);
     setCategoryId(savedCategory._id);
-    fetchCategories(); // Refresh the list of categories
+    fetchCategories(groupId); // Refresh the list of categories
   };
 
   const handleSave = async () => {
@@ -141,7 +160,8 @@ export default function ExpensesScreen({ navigation }) {
       reason,
       categoryId,
       date: finalDate.toISOString(),
-      receiptUrl
+      receiptUrl,
+      ...(groupId && { groupId })
     };
 
     try {
@@ -402,10 +422,10 @@ export default function ExpensesScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -418,11 +438,11 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 40,
     height: 40,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
@@ -431,7 +451,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -445,7 +465,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 12,
   },
   amountInputWrapper: {
@@ -453,20 +473,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.colors.border,
     paddingBottom: 5,
   },
   amountInput: {
     fontSize: 40,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     textAlign: 'center',
     minWidth: 150,
   },
   currencyLabel: {
     fontSize: 20,
     fontWeight: '500',
-    color: '#888888',
+    color: theme.colors.textSecondary,
     marginLeft: 10,
     marginBottom: -10,
   },
@@ -480,11 +500,11 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     width: '31%',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     paddingVertical: 15,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 5,
@@ -494,7 +514,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   categoryItemActive: {
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
   },
   categoryIconBox: {
     width: 44,
@@ -505,7 +525,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryIconBoxActive: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
   },
   categoryEmoji: {
     fontSize: 22,
@@ -513,17 +533,17 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666666',
+    color: theme.colors.textSecondary,
   },
   categoryNameActive: {
-    color: '#ffffff',
+    color: theme.colors.surface,
   },
   inputWrapper: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     paddingHorizontal: 15,
     paddingVertical: 16,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 5,
@@ -531,23 +551,23 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontSize: 15,
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   autocompleteDropdown: {
     position: 'absolute',
     top: 85,
     left: 0,
     right: 0,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     paddingVertical: 5,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 8,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: theme.colors.border,
   },
   autocompleteItem: {
     flexDirection: 'row',
@@ -555,7 +575,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
+    borderBottomColor: theme.colors.background,
   },
   suggestionIcon: {
     fontSize: 16,
@@ -563,7 +583,7 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     fontSize: 14,
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     fontWeight: '500',
     flex: 1,
   },
@@ -574,12 +594,12 @@ const styles = StyleSheet.create({
   },
   dateOption: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 5,
@@ -587,30 +607,30 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dateOptionActive: {
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
   },
   dateOptionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666666',
+    color: theme.colors.textSecondary,
   },
   dateOptionTextActive: {
-    color: '#ffffff',
+    color: theme.colors.surface,
   },
   saveBtn: {
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
     marginTop: 10,
-    shadowColor: '#2e2e2e',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 5,
   },
   saveBtnText: {
-    color: '#ffffff',
+    color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '700',
   }

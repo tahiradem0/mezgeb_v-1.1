@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemeContext } from '../context/ThemeContext';
 
 import LoginScreen from '../screens/Auth/LoginScreen';
 import RegisterScreen from '../screens/Auth/RegisterScreen';
@@ -21,7 +23,7 @@ const Tab = createBottomTabNavigator();
 
 import { Feather } from '@expo/vector-icons';
 
-const CustomTabBarButton = ({ children, onPress }) => (
+const CustomTabBarButton = ({ children, onPress, theme }) => (
   <TouchableOpacity
     style={{
       top: -10, // Match translateY(-10px)
@@ -34,7 +36,7 @@ const CustomTabBarButton = ({ children, onPress }) => (
       width: 56,
       height: 56,
       borderRadius: 28,
-      backgroundColor: '#2e2e2e',
+      backgroundColor: theme.colors.primary,
       elevation: 5,
       shadowColor: '#000',
       shadowOpacity: 0.1,
@@ -49,6 +51,8 @@ const CustomTabBarButton = ({ children, onPress }) => (
 );
 
 function MainTabNavigator() {
+  const insets = useSafeAreaInsets();
+  const { theme } = useContext(ThemeContext);
   return (
     <Tab.Navigator
       screenOptions={{
@@ -60,10 +64,11 @@ function MainTabNavigator() {
           left: 0,
           right: 0,
           elevation: 0,
-          backgroundColor: '#ffffff',
-          height: 70, // Matches --nav-height
+          backgroundColor: theme.colors.surface,
+          height: 70 + insets.bottom,
+          paddingBottom: insets.bottom,
           borderTopWidth: 1,
-          borderTopColor: '#f0f0f0',
+          borderTopColor: theme.colors.border,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.05,
@@ -76,7 +81,7 @@ function MainTabNavigator() {
         component={DashboardScreen} 
         options={{
           tabBarIcon: ({ focused }) => (
-            <Feather name="home" color={focused ? '#2e2e2e' : '#a0a0a0'} size={24} />
+            <Feather name="home" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
           ),
         }}
       />
@@ -85,7 +90,7 @@ function MainTabNavigator() {
         component={ReportScreen} 
         options={{
           tabBarIcon: ({ focused }) => (
-            <Feather name="bar-chart-2" color={focused ? '#2e2e2e' : '#a0a0a0'} size={24} />
+            <Feather name="bar-chart-2" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
           ),
         }}
       />
@@ -94,10 +99,10 @@ function MainTabNavigator() {
         component={ExpensesScreen} 
         options={{
           tabBarIcon: ({ focused }) => (
-            <Feather name="plus" color="#ffffff" size={28} />
+            <Feather name="plus" color={theme.colors.surface} size={28} />
           ),
           tabBarButton: (props) => (
-            <CustomTabBarButton {...props} />
+            <CustomTabBarButton {...props} theme={theme} />
           )
         }}
       />
@@ -106,7 +111,7 @@ function MainTabNavigator() {
         component={GroupsScreen} 
         options={{
           tabBarIcon: ({ focused }) => (
-            <Feather name="hexagon" color={focused ? '#2e2e2e' : '#a0a0a0'} size={24} />
+            <Feather name="hexagon" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
           ),
         }}
       />
@@ -115,7 +120,7 @@ function MainTabNavigator() {
         component={SettingsScreen} 
         options={{
           tabBarIcon: ({ focused }) => (
-            <Feather name="settings" color={focused ? '#2e2e2e' : '#a0a0a0'} size={24} />
+            <Feather name="settings" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
           ),
         }}
       />
@@ -129,12 +134,8 @@ export default function AppNavigator() {
 
   useEffect(() => {
     const bootstrapAsync = async () => {
-      let token;
-      try {
-        token = await AsyncStorage.getItem('token');
-      } catch (e) {
-      }
-      setUserToken(token);
+      // Intentionally DO NOT auto-login. The user must explicitly login on fresh app start.
+      setUserToken(null);
       setIsLoading(false);
     };
     bootstrapAsync();

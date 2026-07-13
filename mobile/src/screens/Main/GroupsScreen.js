@@ -1,18 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, FlatList, TextInput as RNTextInput, Platform } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text , useTheme } from 'react-native-paper';
 import { apiClient } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
 import { Feather } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import EditExpenseModal from '../../components/EditExpenseModal';
 import ManageCategoryModal from '../../components/ManageCategoryModal';
 
 const screenWidth = Dimensions.get('window').width;
 
-export default function GroupsScreen({ route }) {
-  const groupId = route?.params?.groupId;
+export default function GroupsScreen() {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const [groupId, setGroupId] = useState(null);
+  const activeGroupRef = useRef(null);
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -23,16 +28,25 @@ export default function GroupsScreen({ route }) {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [groupId]);
+  useFocusEffect(
+    useCallback(() => {
+      const loadGroupId = async () => {
+        const stored = await AsyncStorage.getItem('activeGroupId');
+        const active = stored === 'personal' || !stored ? null : stored;
+        setGroupId(active);
+        activeGroupRef.current = active;
+        fetchData(active);
+      };
+      loadGroupId();
+    }, [])
+  );
 
-  const fetchData = async () => {
+  const fetchData = async (currentGroupId) => {
     try {
       let categoriesUrl = '/categories';
       let expensesUrl = '/expenses';
       
-      const contextKey = groupId || 'personal';
+      const contextKey = currentGroupId || 'personal';
       const catCacheKey = `groups_categories_${contextKey}`;
       const expCacheKey = `groups_expenses_${contextKey}`;
 
@@ -44,9 +58,9 @@ export default function GroupsScreen({ route }) {
       if (cachedExp) setExpenses(cachedExp);
 
       // 2. BACKGROUND SYNC
-      if (groupId) {
-        categoriesUrl += `?groupId=${groupId}`;
-        expensesUrl += `?groupId=${groupId}`;
+      if (currentGroupId) {
+        categoriesUrl += `?groupId=${currentGroupId}`;
+        expensesUrl += `?groupId=${currentGroupId}`;
       }
 
       const [catRes, expRes] = await Promise.all([
@@ -54,6 +68,8 @@ export default function GroupsScreen({ route }) {
         apiClient.get(expensesUrl)
       ]);
       
+      if (currentGroupId !== activeGroupRef.current) return; // Stale fetch
+
       // 3. CACHE UPDATE & RE-RENDER
       setCategories(catRes.data);
       setExpenses(expRes.data);
@@ -70,7 +86,7 @@ export default function GroupsScreen({ route }) {
       await apiClient.patch(`/expenses/${updatedExpense._id}`, updatedExpense);
       setIsEditModalVisible(false);
       setSelectedExpense(null);
-      fetchData();
+      fetchData(groupId);
     } catch (error) {
       console.error('Error updating expense:', error);
       alert('Failed to update expense');
@@ -82,7 +98,7 @@ export default function GroupsScreen({ route }) {
       await apiClient.delete(`/expenses/${id}`);
       setIsEditModalVisible(false);
       setSelectedExpense(null);
-      fetchData();
+      fetchData(groupId);
     } catch (error) {
       console.error('Error deleting expense:', error);
       alert('Failed to delete expense');
@@ -95,7 +111,7 @@ export default function GroupsScreen({ route }) {
     if (selectedCategory && selectedCategory._id === savedCategory._id) {
       setSelectedCategory(savedCategory);
     }
-    fetchData();
+    fetchData(groupId);
   };
 
   const handleCategoryDelete = (deletedId) => {
@@ -104,7 +120,7 @@ export default function GroupsScreen({ route }) {
     if (selectedCategory && selectedCategory._id === deletedId) {
       setSelectedCategory(null);
     }
-    fetchData();
+    fetchData(groupId);
   };
 
   const renderCategoryGrid = () => (
@@ -335,10 +351,10 @@ export default function GroupsScreen({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -351,11 +367,11 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 40,
     height: 40,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
@@ -364,7 +380,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -376,7 +392,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 15,
   },
   categorySelector: {
@@ -386,12 +402,12 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     width: '48%',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     paddingVertical: 20,
     paddingHorizontal: 15,
     borderRadius: 20,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
@@ -412,13 +428,13 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   categoryTotal: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#888888',
+    color: theme.colors.textSecondary,
   },
   statsHeaderRow: {
     flexDirection: 'row',
@@ -430,7 +446,7 @@ const styles = StyleSheet.create({
   statsTitleText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   statsRow: {
     flexDirection: 'row',
@@ -439,10 +455,10 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '48%',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
@@ -450,20 +466,20 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 13,
-    color: '#888888',
+    color: theme.colors.textSecondary,
     fontWeight: '500',
     marginBottom: 8,
   },
   statValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   chartSection: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 24,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 15,
@@ -478,11 +494,11 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   periodTabs: {
     flexDirection: 'row',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     borderRadius: 20,
     padding: 4,
   },
@@ -494,24 +510,24 @@ const styles = StyleSheet.create({
   periodTabActive: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
     borderRadius: 16,
   },
   periodTabText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#888888',
+    color: theme.colors.textSecondary,
   },
   periodTabTextActive: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#ffffff',
+    color: theme.colors.surface,
   },
   tableSection: {
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.03,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
@@ -520,35 +536,35 @@ const styles = StyleSheet.create({
   tableHeaderRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
     paddingBottom: 10,
     marginBottom: 10,
   },
   tableHeaderCell: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#888888',
+    color: theme.colors.textSecondary,
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f9f9f9',
+    borderBottomColor: theme.colors.background,
   },
   tableCellDate: {
     fontSize: 13,
-    color: '#888888',
+    color: theme.colors.textSecondary,
   },
   tableCellReason: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   tableCellAmount: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   dateRangeContainer: {
     flexDirection: 'row',
@@ -565,30 +581,30 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   dateRangeTo: {
     marginHorizontal: 10,
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontSize: 14,
   },
   exportBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
     paddingVertical: 15,
     borderRadius: 16,
     marginTop: 20,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 4,
   },
   exportBtnText: {
-    color: '#ffffff',
+    color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '700',
   },

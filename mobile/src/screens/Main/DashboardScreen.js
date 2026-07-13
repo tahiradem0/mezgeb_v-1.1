@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Image, RefreshControl, PanResponder } from 'react-native';
 import { Text, Title, useTheme } from 'react-native-paper';
+import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
+import { io } from 'socket.io-client';
 import { BarChart } from 'react-native-chart-kit';
-import { apiClient } from '../../api/client';
+import { apiClient, addToOfflineQueue, API_BASE_URL } from '../../api/client';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import EditExpenseModal from '../../components/EditExpenseModal';
-import { getCache, storeCache } from '../../utils/cache';
+import { getCache, storeCache, setCachedData } from '../../utils/cache';
+import NetInfo from '@react-native-community/netinfo';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -21,7 +25,9 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [tooltipData, setTooltipData] = useState(null);
   const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
+  const activeGroupRef = useRef(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -32,8 +38,33 @@ export default function DashboardScreen() {
     useCallback(() => {
       loadUser();
       fetchDashboardData(currentGroupId);
+      AsyncStorage.setItem('activeGroupId', currentGroupId || 'personal');
     }, [currentGroupId])
   );
+
+  useEffect(() => {
+    activeGroupRef.current = currentGroupId;
+  }, [currentGroupId]);
+
+  useEffect(() => {
+    const loadPrivacySetting = async () => {
+      try {
+        const savedPrivacy = await AsyncStorage.getItem('dashboardIsPrivate');
+        if (savedPrivacy !== null) {
+          setIsPrivate(savedPrivacy === 'true');
+        }
+      } catch (e) {}
+    };
+    loadPrivacySetting();
+  }, []);
+
+  const togglePrivacy = async () => {
+    try {
+      const newValue = !isPrivate;
+      setIsPrivate(newValue);
+      await AsyncStorage.setItem('dashboardIsPrivate', newValue.toString());
+    } catch (e) {}
+  };
 
   const loadUser = async () => {
     try {
@@ -78,6 +109,11 @@ export default function DashboardScreen() {
         apiClient.get('/groups')
       ]);
       
+      // Prevent race conditions: if user switched groups while fetching, discard this result.
+      if (groupId !== activeGroupRef.current) {
+        return;
+      }
+      
       // 3. CACHE UPDATE & RE-RENDER
       setExpenses(expRes.data);
       setCategories(catRes.data);
@@ -109,18 +145,16 @@ export default function DashboardScreen() {
 
   const handleDeleteExpense = async (id) => {
     try {
-      const { default: NetInfo } = await import('@react-native-community/netinfo');
       const netInfo = await NetInfo.fetch();
       
       if (netInfo.isConnected) {
         await apiClient.delete(`/expenses/${id}`);
       } else {
-        const { addToOfflineQueue } = await import('../../api/client');
         await addToOfflineQueue({ method: 'DELETE', url: `/expenses/${id}` });
         // Optimistic UI update: instantly remove from UI cache
         const newExpenses = expenses.filter(e => e._id !== id);
         setExpenses(newExpenses);
-        await require('../../utils/cache').setCachedData('expenses_null', newExpenses);
+        await setCachedData('expenses_null', newExpenses);
       }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
@@ -145,7 +179,9 @@ export default function DashboardScreen() {
     } else {
       nextIndex = (currentIndex - 1 + allContexts.length) % allContexts.length;
     }
-    setCurrentGroupId(allContexts[nextIndex]);
+    const newGroupId = allContexts[nextIndex];
+    setCurrentGroupId(newGroupId);
+    AsyncStorage.setItem('activeGroupId', newGroupId || 'personal');
   };
 
   const panResponder = useRef(
@@ -176,6 +212,80 @@ export default function DashboardScreen() {
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   });
   const thisMonthTotal = thisMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+  // Calculate Last Month Total
+  const lastMonthDate = new Date();
+  lastMonthDate.setMonth(currentMonth - 1);
+  const lastMonth = lastMonthDate.getMonth();
+  const lastMonthYear = lastMonthDate.getFullYear();
+
+  const lastMonthExpenses = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+  });
+  const lastMonthTotal = lastMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+  let percentChange = 0;
+  if (lastMonthTotal === 0) {
+    if (thisMonthTotal > 0) percentChange = 100;
+  } else {
+    percentChange = ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100;
+  }
+  
+  const isIncrease = percentChange > 0;
+  const isNeutral = percentChange === 0;
+  const percentChangeText = `${isIncrease ? '↑' : (isNeutral ? '-' : '↓')} ${Math.abs(percentChange).toFixed(1)}%`;
+  const badgeColor = isIncrease ? theme.colors.error : theme.colors.success;
+  const badgeBgColor = isIncrease ? `${theme.colors.error}40` : `${theme.colors.success}40`;
+
+  // Budget Alert Notification Check
+  useEffect(() => {
+    const checkBudget = async () => {
+      try {
+        if (user?.settings?.budgetAlertEnabled && user?.settings?.budgetLimit > 0) {
+          if (thisMonthTotal > user.settings.budgetLimit) {
+            const key = `budget_alert_sent_${currentMonth}_${currentYear}`;
+            const alreadySent = await AsyncStorage.getItem(key);
+            if (!alreadySent) {
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: "⚠️ Budget Exceeded!",
+                  body: `You have spent ${thisMonthTotal.toLocaleString()} ETB this month, exceeding your limit of ${user.settings.budgetLimit.toLocaleString()} ETB.`,
+                },
+                trigger: null,
+              });
+              await AsyncStorage.setItem(key, 'true');
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Error triggering budget alert', e);
+      }
+    };
+    
+    if (thisMonthTotal > 0 && user) {
+      checkBudget();
+    }
+  }, [thisMonthTotal, user, currentMonth, currentYear]);
+
+  // Socket.IO Real-Time Sync
+  useEffect(() => {
+    let socket;
+    if (currentGroupId) {
+      const socketUrl = API_BASE_URL.replace('/api', '');
+      socket = io(socketUrl);
+      socket.emit('joinGroup', currentGroupId);
+      
+      socket.on('expenseUpdated', () => {
+        console.log('Real-time update received!');
+        fetchDashboardData(currentGroupId);
+      });
+    }
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, [currentGroupId]);
 
   let chartLabels = [];
   let chartData = [];
@@ -271,7 +381,7 @@ export default function DashboardScreen() {
           <View style={styles.summaryCol}>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
               <Text style={styles.summaryTitle}>Expense Summary</Text>
-              <TouchableOpacity onPress={() => setIsPrivate(!isPrivate)} style={{marginLeft: 10, paddingBottom: 8}}>
+              <TouchableOpacity onPress={togglePrivacy} style={{marginLeft: 10, paddingBottom: 8}}>
                 <Feather name={isPrivate ? "eye-off" : "eye"} size={16} color="#888" />
               </TouchableOpacity>
             </View>
@@ -291,8 +401,8 @@ export default function DashboardScreen() {
         <View style={styles.summaryDivider} />
 
         <View style={styles.summaryFooter}>
-          <View style={styles.pillBadge}>
-            <Text style={styles.pillBadgeText}>↓ 0.0%</Text>
+          <View style={[styles.pillBadge, { backgroundColor: badgeBgColor }]}>
+            <Text style={[styles.pillBadgeText, { color: badgeColor }]}>{percentChangeText}</Text>
           </View>
           <Text style={styles.footerText}>this month vs last month</Text>
         </View>
@@ -508,6 +618,24 @@ export default function DashboardScreen() {
               </View>
               <View style={{flex: 2.2, paddingRight: 5, justifyContent: 'center'}}>
                 <Text style={styles.tableCellReason} numberOfLines={2}>{item.reason}</Text>
+                {currentGroupId && item.userId?.username && (
+                  <View style={{
+                    flexDirection: 'row', 
+                    alignItems: 'center', 
+                    backgroundColor: '#e8f5e9', 
+                    paddingHorizontal: 8, 
+                    paddingVertical: 3, 
+                    borderRadius: 12, 
+                    alignSelf: 'flex-start', 
+                    marginTop: 6,
+                    maxWidth: '100%'
+                  }}>
+                    <Feather name="user" size={10} color="#2e7d32" style={{marginRight: 4}} />
+                    <Text style={{fontSize: 10, color: '#2e7d32', fontWeight: '700', flexShrink: 1}} numberOfLines={1}>
+                      {item.userId.username}
+                    </Text>
+                  </View>
+                )}
               </View>
               <View style={{flex: 2.6, alignItems: 'center', justifyContent: 'center'}}>
                 <View style={styles.tableCategoryPill}>
@@ -543,10 +671,10 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     padding: 20,
     paddingTop: 50,
   },
@@ -557,12 +685,12 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontSize: 14,
-    color: '#888',
+    color: theme.colors.textSecondary,
   },
   usernameText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginTop: -5,
   },
   headerRight: {
@@ -582,7 +710,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   badgeText: {
-    color: '#fff',
+    color: theme.colors.surface,
     fontSize: 10,
     fontWeight: 'bold',
   },
@@ -591,7 +719,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: theme.colors.border,
   },
   avatarFallback: {
     width: 44,
@@ -613,18 +741,18 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: theme.colors.border,
     marginHorizontal: 3,
   },
   dotActive: {
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
   },
   carouselText: {
     fontSize: 12,
-    color: '#888',
+    color: theme.colors.textSecondary,
   },
   summaryCard: {
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
     borderRadius: 20,
     padding: 24,
     marginBottom: 20,
@@ -637,17 +765,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   summaryTitle: {
-    color: '#fff',
+    color: theme.colors.surface,
     fontSize: 14,
     marginBottom: 15,
   },
   summaryLabel: {
-    color: '#aaa',
+    color: theme.colors.textMuted,
     fontSize: 13,
     marginBottom: 5,
   },
   summaryAmount: {
-    color: '#fff',
+    color: theme.colors.surface,
     fontSize: 28,
     fontWeight: 'bold',
   },
@@ -658,7 +786,7 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: '#444',
+    backgroundColor: theme.colors.textSecondary,
     marginVertical: 20,
   },
   summaryFooter: {
@@ -678,17 +806,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   footerText: {
-    color: '#aaa',
+    color: theme.colors.textMuted,
     fontSize: 12,
   },
   analyticsCard: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 20,
     marginBottom: 25,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-    shadowColor: '#000',
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
     shadowRadius: 5,
@@ -697,12 +825,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 15,
   },
   pillContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: theme.colors.background,
     borderRadius: 20,
     padding: 4,
   },
@@ -713,15 +841,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   pillButtonActive: {
-    backgroundColor: '#2e2e2e',
+    backgroundColor: theme.colors.textPrimary,
   },
   pillText: {
     fontSize: 13,
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontWeight: '500',
   },
   pillTextActive: {
-    color: '#fff',
+    color: theme.colors.surface,
     fontWeight: 'bold',
   },
   chartArea: {
@@ -736,7 +864,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   seeAllText: {
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -747,13 +875,13 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     width: '48%',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 15,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-    shadowColor: '#000',
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
     shadowRadius: 5,
@@ -763,7 +891,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
@@ -774,41 +902,41 @@ const styles = StyleSheet.create({
   recentTransactionReason: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   recentTransactionDate: {
     fontSize: 13,
-    color: '#888888',
+    color: theme.colors.textSecondary,
   },
   recentTransactionAmount: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   categoryName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 5,
   },
   categoryAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     marginBottom: 10,
   },
   categoryDate: {
     fontSize: 11,
-    color: '#aaa',
+    color: theme.colors.textMuted,
   },
   tableContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: theme.colors.border,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
     shadowRadius: 5,
@@ -816,15 +944,15 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: theme.colors.background,
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.border,
   },
   tableHeaderText: {
     fontSize: 12,
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontWeight: '600',
   },
   tableRow: {
@@ -832,22 +960,22 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8f8f8',
+    borderBottomColor: theme.colors.border,
     alignItems: 'center',
   },
   tableCellDate: {
     fontSize: 12,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
   tableCellReason: {
     fontSize: 13,
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
     fontWeight: '500',
   },
   tableCategoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: theme.colors.background,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -859,11 +987,11 @@ const styles = StyleSheet.create({
   },
   tableCategoryText: {
     fontSize: 11,
-    color: '#444',
+    color: theme.colors.textSecondary,
   },
   tableCellAmount: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   }
 });

@@ -1,3 +1,4 @@
+import { useTheme } from 'react-native-paper';
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, Modal, TouchableOpacity, 
@@ -10,6 +11,8 @@ import * as Sharing from 'expo-sharing';
 import { apiClient } from '../api/client';
 
 export default function EditExpenseModal({ visible, expense, categories, onClose, onSave, onDelete }) {
+  const theme = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [date, setDate] = useState('');
@@ -130,6 +133,30 @@ export default function EditExpenseModal({ visible, expense, categories, onClose
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom: 20}}>
             
+            {/* Added By Section */}
+            {/* Added By Section */}
+            {expense?.userId?.username && (
+              <View style={{ marginBottom: 5 }}>
+                <Text style={styles.label}>Recorded By</Text>
+                <View style={[styles.input, {flexDirection: 'row', alignItems: 'center', padding: 12}]}>
+                  <View style={{
+                    width: 36, 
+                    height: 36, 
+                    borderRadius: 18, 
+                    backgroundColor: '#e8f5e9', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    marginRight: 12
+                  }}>
+                    <Feather name="user" size={18} color="#2e7d32" />
+                  </View>
+                  <Text style={{fontSize: 16, color: theme.colors.textPrimary, fontWeight: '600'}} numberOfLines={1}>
+                    {expense.userId.username}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Amount */}
             <Text style={styles.label}>Amount</Text>
             <TextInput
@@ -285,7 +312,7 @@ export default function EditExpenseModal({ visible, expense, categories, onClose
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -294,13 +321,13 @@ const styles = StyleSheet.create({
     padding: 20
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     width: '100%',
     maxWidth: 500,
     borderRadius: 24,
     padding: 24,
     maxHeight: '90%',
-    shadowColor: '#000',
+    shadowColor: theme.colors.textPrimary,
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 10 },
     shadowRadius: 20,
@@ -315,26 +342,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2e2e2e',
+    color: theme.colors.textPrimary,
   },
   closeBtn: {
     padding: 5,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#888',
+    color: '#4a4a4a',
     marginBottom: 8,
     marginTop: 15,
   },
   input: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
+    padding: 16,
     fontSize: 16,
-    color: '#2e2e2e',
-    marginBottom: 10,
+    backgroundColor: theme.colors.background,
+    color: theme.colors.textPrimary,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -348,7 +375,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   categoryItemActive: {
-    backgroundColor: '#444',
+    backgroundColor: theme.colors.textSecondary,
   },
   categoryEmoji: {
     fontSize: 24,
@@ -356,7 +383,7 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 11,
-    color: '#888',
+    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
   saveBtn: {
@@ -372,7 +399,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveBtnText: {
-    color: '#fff',
+    color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,

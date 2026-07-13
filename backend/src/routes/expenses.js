@@ -73,6 +73,11 @@ router.post('/', auth, async (req, res) => {
         // Populate user info for immediate frontend update in shared view
         await expense.populate('userId', 'username');
 
+        const io = req.app.get('io');
+        if (io && expense.groupId) {
+            io.to(expense.groupId.toString()).emit('expenseUpdated');
+        }
+
         res.status(201).json(expense);
     } catch (e) {
         console.error('Create Expense Error:', e);
@@ -118,7 +123,13 @@ router.patch('/:id', auth, async (req, res) => {
             req.params.id,
             req.body,
             { new: true }
-        );
+        ).populate('userId', 'username');
+        
+        const io = req.app.get('io');
+        if (io && updatedExpense.groupId) {
+            io.to(updatedExpense.groupId.toString()).emit('expenseUpdated');
+        }
+
         res.json(updatedExpense);
     } catch (e) {
         res.status(400).json({ error: e.message });
@@ -140,6 +151,12 @@ router.delete('/:id', auth, async (req, res) => {
         if (!hasPermission) return res.status(403).json({ error: 'Permission denied' });
 
         await Expense.findByIdAndDelete(req.params.id);
+        
+        const io = req.app.get('io');
+        if (io && expense.groupId) {
+            io.to(expense.groupId.toString()).emit('expenseUpdated');
+        }
+
         res.json(expense);
     } catch (e) {
         res.status(500).json({ error: e.message });

@@ -1,6 +1,15 @@
 import React, { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 LogBox.ignoreLogs(['Invalid DOM property `transform-origin`']);
 
@@ -18,10 +27,25 @@ import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { syncOfflineData } from './src/api/client';
 import AppNavigator from './src/navigation/AppNavigator';
+import BiometricWrapper from './src/components/BiometricWrapper';
 
-import { theme } from './src/theme';
+import { ThemeProvider, ThemeContext } from './src/context/ThemeContext';
+import { useContext } from 'react';
 
-export default function App() {
+const AppRoot = () => {
+  const { theme } = useContext(ThemeContext);
+  return (
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <BiometricWrapper>
+          <AppNavigator />
+        </BiometricWrapper>
+      </PaperProvider>
+    </SafeAreaProvider>
+  );
+};
+
+  export default function App() {
   useEffect(() => {
     // Listen for network changes to trigger offline sync
     const unsubscribe = NetInfo.addEventListener(state => {
@@ -29,14 +53,24 @@ export default function App() {
         syncOfflineData();
       }
     });
+
+    async function configurePushNotifications() {
+      const { status } = await Notifications.getPermissionsAsync();
+      let finalStatus = status;
+
+      if (finalStatus !== 'granted') {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        finalStatus = newStatus;
+      }
+    }
+    configurePushNotifications();
+
     return () => unsubscribe();
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <PaperProvider theme={theme}>
-        <AppNavigator />
-      </PaperProvider>
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <AppRoot />
+    </ThemeProvider>
   );
 }

@@ -56,6 +56,11 @@ router.patch('/settings', auth, async (req, res) => {
             req.user.profileImage = profileImage;
         }
 
+        if (typeof req.body.biometricEnabled === 'boolean') {
+            req.user.biometricEnabled = req.body.biometricEnabled;
+            delete settingsData.biometricEnabled;
+        }
+
         // Update settings
         if (Object.keys(settingsData).length > 0) {
             req.user.settings = { ...req.user.settings, ...settingsData };

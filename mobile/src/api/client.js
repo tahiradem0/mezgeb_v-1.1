@@ -1,8 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-
-const API_BASE_URL = 'https://mezgeb-v-1-1.onrender.com/api'; // using live Render backend url
+export const API_BASE_URL = 'http://localhost:5000/api'; // Point to local backend to test new changes
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -89,4 +88,14 @@ export const syncOfflineData = async () => {
   } catch (e) {
     console.error('Sync error', e);
   }
+};
+
+export const createGroup = async (name, connectionId) => {
+  const response = await apiClient.post('/groups/create', { name, connectionId });
+  return response.data;
+};
+
+export const joinGroup = async (partnerPhone, connectionId) => {
+  const response = await apiClient.post('/groups/join', { partnerPhone, connectionId });
+  return response.data;
 };
