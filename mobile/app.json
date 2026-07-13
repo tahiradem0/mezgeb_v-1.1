@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Haiil Expense",
-    "slug": "haiil-expense",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -42,7 +42,9 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-notifications",
+      "expo-local-authentication"
     ],
     "experiments": {
       "typedRoutes": false,
