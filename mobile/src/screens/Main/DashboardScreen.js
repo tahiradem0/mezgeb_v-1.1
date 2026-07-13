@@ -361,7 +361,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 100}}>
+    <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 150}}>
       
       {/* Header */}
       <View style={styles.header}>

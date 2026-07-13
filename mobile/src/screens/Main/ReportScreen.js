@@ -243,7 +243,7 @@ export default function ReportScreen() {
         </View>
       )}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 150 }}>
         <View style={styles.tableContainer}>
           {/* Table Header */}
           <View style={styles.tableHeader}>

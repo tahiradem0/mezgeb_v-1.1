@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, DeviceEventEmitter } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -143,6 +143,14 @@ export default function AppNavigator() {
       setIsLoading(false);
     };
     bootstrapAsync();
+
+    const logoutListener = DeviceEventEmitter.addListener('logout', () => {
+      setUserToken(null);
+    });
+
+    return () => {
+      logoutListener.remove();
+    };
   }, []);
 
   if (isLoading) {

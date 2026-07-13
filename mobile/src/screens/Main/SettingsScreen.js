@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform, Linking, DeviceEventEmitter } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { apiClient, addToOfflineQueue } from '../../api/client';
 import { setIntentionalBackground } from '../../components/BiometricWrapper';
 import NetInfo from '@react-native-community/netinfo';
@@ -141,13 +142,30 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleBiometricToggle = async (value) => {
+    if (value) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert("Unavailable", "Your device does not have biometrics configured.");
+        return;
+      }
+      
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to enable Biometric Lock',
+        fallbackLabel: 'Use Passcode',
+      });
+      
+      if (!result.success) return;
+    }
+    
+    updateSetting('biometricEnabled', value);
+  };
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('currentUser');
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+    DeviceEventEmitter.emit('logout');
   };
 
   const renderSettingItem = (iconName, label, rightText = null, IconComponent = Feather, onPress = null) => (
@@ -262,7 +280,7 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           {renderToggleItem('bell', 'Budget Alerts', settings.budgetAlertEnabled, (v) => updateSetting('budgetAlertEnabled', v))}
           <View style={styles.divider} />
-          {renderToggleItem('shield', 'Biometric Lock', user?.biometricEnabled || false, (v) => updateSetting('biometricEnabled', v))}
+          {renderToggleItem('shield', 'Biometric Lock', user?.biometricEnabled || false, handleBiometricToggle)}
         </View>
       </View>
 

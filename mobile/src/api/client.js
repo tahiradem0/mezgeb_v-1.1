@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import { DeviceEventEmitter } from 'react-native';
 export const API_BASE_URL = 'http://192.168.111.230:5000/api'; // Point to local network backend for Expo Go
 
 export const apiClient = axios.create({
@@ -30,7 +31,7 @@ apiClient.interceptors.response.use(
       console.warn('Session expired or invalid. Logging out.');
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('currentUser');
-      // A mechanism to notify the app to show login screen
+      DeviceEventEmitter.emit('logout');
     }
     return Promise.reject(error);
   }

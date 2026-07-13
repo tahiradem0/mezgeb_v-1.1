@@ -180,7 +180,7 @@ export default function GroupsScreen() {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 }]} showsVerticalScrollIndicator={false}>
           
           <View style={styles.statsHeaderRow}>
             <Text style={styles.statsTitleText}>Statistics</Text>
@@ -314,7 +314,7 @@ export default function GroupsScreen() {
           <View style={[styles.header, { justifyContent: 'flex-start' }]}>
             <Text style={[styles.headerTitle, { fontSize: 24 }]}>Categories</Text>
           </View>
-          <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
             {renderCategoryGrid()}
           </ScrollView>
         </>
