@@ -18,7 +18,15 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.tahir_adem.mobile"
+      "package": "com.tahir_adem.mobile",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -54,6 +62,12 @@
       "eas": {
         "projectId": "bbe851ab-f992-45c5-9487-e0e5ecb06607"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/bbe851ab-f992-45c5-9487-e0e5ecb06607"
     }
   }
 }
