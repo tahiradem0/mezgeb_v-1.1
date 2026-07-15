@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Image, RefreshControl, PanResponder, Alert } from 'react-native';
 import { Text, Title, useTheme } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import * as Notifications from 'expo-notifications';
+
 import { io } from 'socket.io-client';
 import { BarChart } from 'react-native-chart-kit';
 import { apiClient, addToOfflineQueue, API_BASE_URL } from '../../api/client';
