@@ -2,6 +2,9 @@ import 'react-native-gesture-handler';
 import React, { useEffect, useContext, Component } from 'react';
 import { View, Text as RNText, LogBox, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 import { Provider as PaperProvider } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { syncOfflineData } from './src/api/client';
@@ -121,6 +124,13 @@ export default function App() {
       }
     }
     configurePushNotifications();
+
+    // Hide splash screen once we are mounted
+    setTimeout(async () => {
+      try {
+        await SplashScreen.hideAsync();
+      } catch (e) {}
+    }, 500);
 
     return () => {
       if (unsubscribe) unsubscribe();
