@@ -2,7 +2,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Image, RefreshControl, PanResponder, Alert } from 'react-native';
 import { Text, Title, useTheme } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-
+let Notifications = null;
+try {
+  Notifications = require('expo-notifications');
+} catch (e) {
+  console.warn('expo-notifications not available:', e.message);
+}
 import { io } from 'socket.io-client';
 import { BarChart } from 'react-native-chart-kit';
 import { apiClient, addToOfflineQueue, API_BASE_URL } from '../../api/client';
@@ -275,7 +280,7 @@ export default function DashboardScreen() {
           if (thisMonthTotal > user.settings.budgetLimit) {
             const key = `budget_alert_sent_${currentMonth}_${currentYear}`;
             const alreadySent = await AsyncStorage.getItem(key);
-            if (!alreadySent) {
+            if (!alreadySent && Notifications) {
               await Notifications.scheduleNotificationAsync({
                 content: {
                   title: "⚠️ Budget Exceeded!",
