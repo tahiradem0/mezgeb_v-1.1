@@ -23,6 +23,7 @@ export default function GroupsScreen() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [periodTab, setPeriodTab] = useState('Weekly');
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
@@ -166,6 +167,49 @@ export default function GroupsScreen() {
     });
     const monthTotal = thisMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
 
+    let chartLabels = [];
+    let chartData = [];
+    
+    if (periodTab === 'Weekly') {
+      chartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      chartData = [0, 0, 0, 0, 0, 0, 0];
+      const startOfWeek = new Date(now);
+      const dayOffset = now.getDay() === 0 ? -6 : 1 - now.getDay();
+      startOfWeek.setDate(now.getDate() + dayOffset);
+      startOfWeek.setHours(0,0,0,0);
+      
+      catExpenses.forEach(e => {
+        const d = new Date(e.date);
+        if (d >= startOfWeek) {
+          const day = d.getDay(); // 0 is Sun
+          const index = day === 0 ? 6 : day - 1;
+          chartData[index] += e.amount;
+        }
+      });
+    } else if (periodTab === 'Monthly') {
+      chartLabels = ['W1', 'W2', 'W3', 'W4'];
+      chartData = [0, 0, 0, 0];
+      catExpenses.forEach(e => {
+        const d = new Date(e.date);
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          const week = Math.floor((d.getDate() - 1) / 7);
+          chartData[Math.min(week, 3)] += e.amount;
+        }
+      });
+    } else if (periodTab === 'Yearly') {
+      chartLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      chartData = new Array(12).fill(0);
+      catExpenses.forEach(e => {
+        const d = new Date(e.date);
+        if (d.getFullYear() === now.getFullYear()) {
+          chartData[d.getMonth()] += e.amount;
+        }
+      });
+    }
+
+    // Chart-kit crashes if all elements are exactly zero on Android sometimes
+    const displayChartData = chartData.some(v => v > 0) ? chartData : chartData.map(() => 0.001);
+
     return (
       <View style={{ flex: 1 }}>
         <View style={styles.header}>
@@ -203,9 +247,15 @@ export default function GroupsScreen() {
             <View style={styles.chartHeader}>
               <Text style={styles.chartTitle}>Spending Trend</Text>
               <View style={styles.periodTabs}>
-                <View style={styles.periodTabActive}><Text style={styles.periodTabTextActive}>Weekly</Text></View>
-                <View style={styles.periodTab}><Text style={styles.periodTabText}>Monthly</Text></View>
-                <View style={styles.periodTab}><Text style={styles.periodTabText}>Yearly</Text></View>
+                {['Weekly', 'Monthly', 'Yearly'].map(tab => (
+                  <TouchableOpacity 
+                    key={tab}
+                    style={periodTab === tab ? styles.periodTabActive : styles.periodTab}
+                    onPress={() => setPeriodTab(tab)}
+                  >
+                    <Text style={periodTab === tab ? styles.periodTabTextActive : styles.periodTabText}>{tab}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
 
@@ -242,8 +292,8 @@ export default function GroupsScreen() {
             <View style={{ alignItems: 'center', marginTop: 20 }}>
               <BarChart
                 data={{
-                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                  datasets: [{ data: [0, 0, 0, monthTotal, 0, 0, 0] }]
+                  labels: chartLabels,
+                  datasets: [{ data: displayChartData }]
                 }}
                 width={screenWidth - 80}
                 height={200}
