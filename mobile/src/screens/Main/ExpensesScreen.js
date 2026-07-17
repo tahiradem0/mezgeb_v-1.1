@@ -116,6 +116,14 @@ export default function ExpensesScreen({ navigation }) {
 
   const fetchPreviousReasons = async (currentGroupId) => {
     try {
+      const contextKey = currentGroupId || 'personal';
+      const expensesCacheKey = `dashboard_expenses_${contextKey}`;
+      const cachedExpenses = await getCache(expensesCacheKey);
+      if (cachedExpenses) {
+        const uniqueReasons = [...new Set(cachedExpenses.map(exp => exp.reason).filter(Boolean))];
+        setPreviousReasons(uniqueReasons);
+      }
+
       const url = currentGroupId ? `/expenses?groupId=${currentGroupId}` : '/expenses';
       const response = await apiClient.get(url);
       if (currentGroupId !== activeGroupRef.current) return;
@@ -128,10 +136,16 @@ export default function ExpensesScreen({ navigation }) {
 
   const fetchCategories = async (currentGroupId) => {
     try {
+      const contextKey = currentGroupId || 'personal';
+      const categoriesCacheKey = `dashboard_categories_${contextKey}`;
+      const cachedCategories = await getCache(categoriesCacheKey);
+      if (cachedCategories) setCategories(cachedCategories);
+
       const url = currentGroupId ? `/categories?groupId=${currentGroupId}` : '/categories';
       const response = await apiClient.get(url);
       if (currentGroupId !== activeGroupRef.current) return;
       setCategories(response.data);
+      storeCache(categoriesCacheKey, response.data);
     } catch (e) {
       console.log('Error fetching categories:', e);
     }
