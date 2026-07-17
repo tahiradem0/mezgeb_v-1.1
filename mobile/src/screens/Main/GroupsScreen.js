@@ -47,8 +47,8 @@ export default function GroupsScreen() {
       let expensesUrl = '/expenses';
       
       const contextKey = currentGroupId || 'personal';
-      const catCacheKey = `groups_categories_${contextKey}`;
-      const expCacheKey = `groups_expenses_${contextKey}`;
+      const catCacheKey = `dashboard_categories_${contextKey}`;
+      const expCacheKey = `dashboard_expenses_${contextKey}`;
 
       // 1. INSTANT LOAD FROM CACHE
       const cachedCat = await getCache(catCacheKey);

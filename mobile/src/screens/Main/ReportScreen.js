@@ -46,8 +46,8 @@ export default function ReportScreen() {
       let categoriesUrl = '/categories';
       
       const contextKey = currentGroupId || 'personal';
-      const catCacheKey = `report_categories_${contextKey}`;
-      const expCacheKey = `report_expenses_${contextKey}`;
+      const catCacheKey = `dashboard_categories_${contextKey}`;
+      const expCacheKey = `dashboard_expenses_${contextKey}`;
 
       // 1. INSTANT LOAD FROM CACHE
       const cachedCat = await getCache(catCacheKey);
@@ -95,7 +95,7 @@ export default function ReportScreen() {
         await addToOfflineQueue({ method: 'PATCH', url: `/expenses/${updatedExpense._id}`, data: updatedExpense });
         const newExpenses = expenses.map(e => e._id === updatedExpense._id ? updatedExpense : e);
         setExpenses(newExpenses);
-        await storeCache(`report_expenses_${groupId || 'personal'}`, newExpenses);
+        await storeCache(`dashboard_expenses_${groupId || 'personal'}`, newExpenses);
       }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
@@ -115,7 +115,7 @@ export default function ReportScreen() {
         await addToOfflineQueue({ method: 'DELETE', url: `/expenses/${id}` });
         const newExpenses = expenses.filter(e => e._id !== id);
         setExpenses(newExpenses);
-        await storeCache(`report_expenses_${groupId || 'personal'}`, newExpenses);
+        await storeCache(`dashboard_expenses_${groupId || 'personal'}`, newExpenses);
       }
       setIsEditModalVisible(false);
       setSelectedExpense(null);
