@@ -207,8 +207,8 @@ export default function GroupsScreen() {
       });
     }
 
-    // Chart-kit crashes if all elements are exactly zero on Android sometimes
-    const displayChartData = chartData.some(v => v > 0) ? chartData : chartData.map(() => 0.001);
+    // We no longer need displayChartData since we'll conditionally render the chart
+
 
     return (
       <View style={{ flex: 1 }}>
@@ -290,36 +290,42 @@ export default function GroupsScreen() {
             </View>
 
             <View style={{ alignItems: 'center', marginTop: 20 }}>
-              <BarChart
-                data={{
-                  labels: chartLabels,
-                  datasets: [{ data: displayChartData }]
-                }}
-                width={screenWidth - 80}
-                height={200}
-                yAxisLabel=""
-                formatYLabel={(yValue) => {
-                  const num = parseInt(yValue, 10);
-                  if (num >= 1000) return (num / 1000).toFixed(0) + 'k';
-                  return yValue;
-                }}
-                chartConfig={{
-                  backgroundColor: '#ffffff',
-                  backgroundGradientFrom: '#ffffff',
-                  backgroundGradientTo: '#ffffff',
-                  decimalPlaces: 0,
-                  color: () => '#2e2e2e',
-                  labelColor: () => '#888888',
-                  barPercentage: 0.5,
-                  fillShadowGradient: '#2e2e2e',
-                  fillShadowGradientOpacity: 1,
-                  propsForBackgroundLines: { strokeWidth: 1, stroke: '#f0f0f0', strokeDasharray: '0' },
-                }}
-                showBarTops={false}
-                fromZero={true}
-                withInnerLines={true}
-                style={{ borderRadius: 16 }}
-              />
+              {chartData.some(v => v > 0) ? (
+                <BarChart
+                  data={{
+                    labels: chartLabels,
+                    datasets: [{ data: chartData }]
+                  }}
+                  width={screenWidth - 80}
+                  height={200}
+                  yAxisLabel=""
+                  formatYLabel={(yValue) => {
+                    const num = parseInt(yValue, 10);
+                    if (num >= 1000) return (num / 1000).toFixed(0) + 'k';
+                    return yValue;
+                  }}
+                  chartConfig={{
+                    backgroundColor: '#ffffff',
+                    backgroundGradientFrom: '#ffffff',
+                    backgroundGradientTo: '#ffffff',
+                    decimalPlaces: 0,
+                    color: () => '#2e2e2e',
+                    labelColor: () => '#888888',
+                    barPercentage: 0.5,
+                    fillShadowGradient: '#2e2e2e',
+                    fillShadowGradientOpacity: 1,
+                    propsForBackgroundLines: { strokeWidth: 1, stroke: '#f0f0f0', strokeDasharray: '0' },
+                  }}
+                  showBarTops={false}
+                  fromZero={true}
+                  withInnerLines={true}
+                  style={{ borderRadius: 16 }}
+                />
+              ) : (
+                <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ color: '#aaa', fontSize: 14, fontWeight: '500' }}>No expenses for this period</Text>
+                </View>
+              )}
             </View>
           </View>
 
