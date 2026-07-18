@@ -57,21 +57,17 @@ export default function BiometricWrapper({ children }) {
 
   const authenticate = async () => {
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-      if (!hasHardware || !isEnrolled) {
-        // Fallback to password or just let them in if hardware isn't supported
-        setIsLocked(false);
-        return;
-      }
-
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Unlock Haiil',
         fallbackLabel: 'Use Passcode',
+        disableDeviceFallback: false,
       });
 
       if (result.success) {
+        setIsLocked(false);
+      } else if (result.error === 'not_enrolled' || result.error === 'passcode_not_set') {
+        // If the device literally has no lock screen or biometrics set up anymore, let them in
+        // because we can't lock them out forever if they removed their phone PIN.
         setIsLocked(false);
       }
     } catch (e) {

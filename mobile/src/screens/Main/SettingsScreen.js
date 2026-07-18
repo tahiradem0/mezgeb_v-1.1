@@ -144,19 +144,24 @@ export default function SettingsScreen() {
 
   const handleBiometricToggle = async (value) => {
     if (value) {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !isEnrolled) {
-        Alert.alert("Unavailable", "Your device does not have biometrics configured.");
+      try {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Authenticate to enable App Lock',
+          fallbackLabel: 'Use Passcode',
+          disableDeviceFallback: false,
+        });
+        
+        if (!result.success) {
+          if (result.error === 'not_enrolled' || result.error === 'passcode_not_set') {
+            Alert.alert("Unavailable", "Your device does not have a screen lock (PIN, Pattern, or Fingerprint) configured. Please set one up in your device settings first.");
+          }
+          return;
+        }
+      } catch (e) {
+        console.error('Biometric toggle error', e);
+        Alert.alert("Error", "Authentication failed or is not available on this device.");
         return;
       }
-      
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to enable Biometric Lock',
-        fallbackLabel: 'Use Passcode',
-      });
-      
-      if (!result.success) return;
     }
     
     updateSetting('biometricEnabled', value);
