@@ -272,24 +272,53 @@ export default function DashboardScreen() {
   const badgeColor = isIncrease ? theme.colors.error : theme.colors.success;
   const badgeBgColor = isIncrease ? `${theme.colors.error}40` : `${theme.colors.success}40`;
 
+  // Budget calculations
+  const budgetLimit = user?.settings?.budgetLimit || 0;
+  const budgetProgress = budgetLimit > 0 ? Math.min(thisMonthTotal / budgetLimit, 1) : 0;
+  const isOverBudget = budgetLimit > 0 && thisMonthTotal > budgetLimit;
+  const isNearBudget = budgetLimit > 0 && thisMonthTotal > budgetLimit * 0.8 && !isOverBudget;
+
   // Budget Alert Notification Check
   useEffect(() => {
     const checkBudget = async () => {
       try {
         if (user?.settings?.budgetAlertEnabled && user?.settings?.budgetLimit > 0) {
-          if (thisMonthTotal > user.settings.budgetLimit) {
-            const key = `budget_alert_sent_${currentMonth}_${currentYear}`;
-            const alreadySent = await AsyncStorage.getItem(key);
-            if (!alreadySent && Notifications) {
-              await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: "⚠️ Budget Exceeded!",
-                  body: `You have spent ${thisMonthTotal.toLocaleString()} ETB this month, exceeding your limit of ${user.settings.budgetLimit.toLocaleString()} ETB.`,
-                },
-                trigger: null,
-              });
-              await AsyncStorage.setItem(key, 'true');
+          
+          const notify = async (title, body, storageKey) => {
+            const alreadySent = await AsyncStorage.getItem(storageKey);
+            if (!alreadySent) {
+              if (Notifications) {
+                const { status: existingStatus } = await Notifications.getPermissionsAsync();
+                let finalStatus = existingStatus;
+                if (existingStatus !== 'granted') {
+                  const { status } = await Notifications.requestPermissionsAsync();
+                  finalStatus = status;
+                }
+                if (finalStatus === 'granted') {
+                  await Notifications.scheduleNotificationAsync({
+                    content: { title, body },
+                    trigger: null,
+                  });
+                }
+              }
+              // Also show in-app alert
+              Alert.alert(title, body);
+              await AsyncStorage.setItem(storageKey, 'true');
             }
+          };
+
+          if (thisMonthTotal > user.settings.budgetLimit) {
+            await notify(
+              "⚠️ Budget Exceeded!", 
+              `You have spent ${thisMonthTotal.toLocaleString()} ETB this month, exceeding your limit of ${user.settings.budgetLimit.toLocaleString()} ETB.`,
+              `budget_alert_100_${currentMonth}_${currentYear}`
+            );
+          } else if (thisMonthTotal > user.settings.budgetLimit * 0.8) {
+            await notify(
+              "⚠️ Approaching Budget Limit", 
+              `You have spent ${thisMonthTotal.toLocaleString()} ETB this month. You are at ${Math.round((thisMonthTotal / user.settings.budgetLimit) * 100)}% of your limit.`,
+              `budget_alert_80_${currentMonth}_${currentYear}`
+            );
           }
         }
       } catch (e) {
@@ -436,6 +465,26 @@ export default function DashboardScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Budget Progress Bar */}
+        {budgetLimit > 0 && (
+          <View style={{ marginTop: 15 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+              <Text style={{ color: '#888', fontSize: 12 }}>Budget Progress</Text>
+              <Text style={{ color: isOverBudget ? theme.colors.error : '#888', fontSize: 12, fontWeight: 'bold' }}>
+                {isPrivate ? '****' : `${Math.round((thisMonthTotal / budgetLimit) * 100)}%`}
+              </Text>
+            </View>
+            <View style={{ height: 6, backgroundColor: '#333', borderRadius: 3, overflow: 'hidden' }}>
+              <View style={{ 
+                width: `${budgetProgress * 100}%`, 
+                height: '100%', 
+                backgroundColor: isOverBudget ? theme.colors.error : (isNearBudget ? '#FF9800' : theme.colors.success),
+                borderRadius: 3 
+              }} />
+            </View>
+          </View>
+        )}
 
         <View style={styles.summaryDivider} />
 
