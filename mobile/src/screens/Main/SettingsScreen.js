@@ -286,12 +286,7 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           {renderToggleItem('moon', 'Dark Mode', settings.darkMode, (v) => updateSetting('darkMode', v))}
           <View style={styles.divider} />
-          {renderSettingItem('dollar-sign', 'Currency', settings.currency, Feather, () => {
-            const curs = ['ETB', 'USD', 'EUR'];
-            const next = curs[(curs.indexOf(settings.currency) + 1) % curs.length];
-            updateSetting('currency', next);
-          })}
-          <View style={styles.divider} />
+
           {renderSettingItem('target', 'Budget Limit', `${settings.currency} ${settings.budgetLimit}`, Feather, handleBudgetChange)}
           <View style={styles.divider} />
           {renderToggleItem('bell', 'Budget Alerts', settings.budgetAlertEnabled, (v) => updateSetting('budgetAlertEnabled', v))}
@@ -303,8 +298,7 @@ export default function SettingsScreen() {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Support</Text>
         <View style={styles.cardBlock}>
-          {renderSettingItem('help-circle', 'Help & FAQ')}
-          <View style={styles.divider} />
+
           {renderSettingItem('message-circle', 'Contact Us', null, Feather, () => {
             Linking.openURL('tel:+251978787960').catch((err) => Alert.alert("Error", "Could not open dialer"));
           })}
