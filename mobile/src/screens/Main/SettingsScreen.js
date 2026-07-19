@@ -18,6 +18,7 @@ export default function SettingsScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
+  const [localBiometric, setLocalBiometric] = useState(false);
   const [settings, setSettings] = useState({
     language: 'English',
     darkMode: false,
@@ -39,12 +40,14 @@ export default function SettingsScreen() {
       if (u) {
         const parsed = JSON.parse(u);
         setUser(parsed);
+        setLocalBiometric(parsed.biometricEnabled || false);
         if (parsed.settings) setSettings(parsed.settings);
       }
       
       // 2. Fetch fresh profile
       const res = await apiClient.get('/auth/me');
       setUser(res.data);
+      setLocalBiometric(res.data.biometricEnabled || false);
       if (res.data.settings) setSettings(res.data.settings);
       await AsyncStorage.setItem('currentUser', JSON.stringify(res.data));
     } catch (e) {
@@ -143,23 +146,31 @@ export default function SettingsScreen() {
   };
 
   const handleBiometricToggle = async (value) => {
+    // Optimistic UI update to prevent switch from bouncing
+    setLocalBiometric(value);
+
     if (value) {
       try {
         const result = await LocalAuthentication.authenticateAsync({
           promptMessage: 'Authenticate to enable App Lock',
-          fallbackLabel: 'Use Passcode',
-          disableDeviceFallback: false,
         });
         
         if (!result.success) {
+          // Revert toggle if authentication fails or is cancelled
+          setLocalBiometric(false);
+          
           if (result.error === 'not_enrolled' || result.error === 'passcode_not_set') {
             Alert.alert("Unavailable", "Your device does not have a screen lock (PIN, Pattern, or Fingerprint) configured. Please set one up in your device settings first.");
+          } else if (result.error !== 'user_cancel' && result.error !== 'system_cancel' && result.error !== 'app_cancel') {
+            // Alert other unexpected errors so we don't silently fail
+            Alert.alert("Failed", `Authentication failed: ${result.error || 'Unknown'}`);
           }
           return;
         }
       } catch (e) {
+        setLocalBiometric(false);
         console.error('Biometric toggle error', e);
-        Alert.alert("Error", "Authentication failed or is not available on this device.");
+        Alert.alert("Error", "Authentication is not available on this device.");
         return;
       }
     }
@@ -285,7 +296,7 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           {renderToggleItem('bell', 'Budget Alerts', settings.budgetAlertEnabled, (v) => updateSetting('budgetAlertEnabled', v))}
           <View style={styles.divider} />
-          {renderToggleItem('shield', 'Biometric Lock', user?.biometricEnabled || false, handleBiometricToggle)}
+          {renderToggleItem('shield', 'Biometric Lock', localBiometric, handleBiometricToggle)}
         </View>
       </View>
 
