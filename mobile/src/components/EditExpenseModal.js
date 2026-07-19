@@ -250,7 +250,7 @@ export default function EditExpenseModal({ visible, expense, categories, onClose
                   </TouchableOpacity>
                 </View>
                 <TouchableOpacity 
-                  style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#2e2e2e', borderRadius: 20 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: theme.colors.textPrimary, borderRadius: 20 }}
                   onPress={handleDownloadReceipt}
                 >
                   <Feather name="download" size={16} color="#fff" style={{ marginRight: 8 }} />
@@ -276,10 +276,10 @@ export default function EditExpenseModal({ visible, expense, categories, onClose
                   width: '100%', 
                   padding: '12px 15px', 
                   borderRadius: '12px', 
-                  border: '1px solid #eee',
-                  backgroundColor: '#f9f9f9',
+                  border: `1px solid ${theme.colors.border}`,
+                  backgroundColor: theme.colors.surface,
                   outline: 'none', 
-                  color: '#2e2e2e', 
+                  color: theme.colors.textPrimary, 
                   fontFamily: 'inherit',
                   fontSize: '16px',
                   marginBottom: '20px',

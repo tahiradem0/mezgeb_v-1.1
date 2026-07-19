@@ -32,7 +32,7 @@ export const darkTheme = {
     background: '#121212',
     surface: '#1E1E1E',
     surfaceElevated: '#2A2A2A',
-    border: '#333333',
+    border: '#444444',
     textPrimary: '#FFFFFF',
     textSecondary: '#AAAAAA',
     textMuted: '#666666',

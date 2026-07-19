@@ -379,7 +379,7 @@ export default function DashboardScreen() {
             style={{marginRight: 15, position: 'relative', padding: 5}}
             onPress={() => setIsNotificationsModalVisible(true)}
           >
-            <MaterialCommunityIcons name="bell-outline" size={26} color="#2e2e2e" />
+            <MaterialCommunityIcons name="bell-outline" size={26} color={theme.colors.textPrimary} />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -563,7 +563,7 @@ export default function DashboardScreen() {
                       <View style={{ 
                         width: Math.min(32, (screenWidth - 120) / chartData.length * 0.8), 
                         height: `${barHeight}%`, 
-                        backgroundColor: isActive ? '#4CAF50' : '#333333',
+                        backgroundColor: isActive ? '#4CAF50' : theme.colors.textPrimary,
                         borderTopLeftRadius: 6,
                         borderTopRightRadius: 6,
                         marginBottom: 30 
@@ -574,7 +574,7 @@ export default function DashboardScreen() {
                         position: 'absolute', 
                         bottom: 5, 
                         fontSize: 11, 
-                        color: isActive ? '#333333' : '#a0a0a0',
+                        color: isActive ? theme.colors.textPrimary : '#a0a0a0',
                         fontWeight: isActive ? '800' : '600'
                       }}>
                         {chartLabels[idx]}
@@ -648,10 +648,10 @@ export default function DashboardScreen() {
               }}
             >
               <View style={{flex: 1.4}}>
-                <Text style={[styles.tableCellDate, { fontWeight: '700', color: '#2e2e2e', fontSize: 13 }]}>
+                <Text style={[styles.tableCellDate, { fontWeight: '700', color: theme.colors.textPrimary, fontSize: 13 }]}>
                   {new Date(item.date || Date.now()).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
                 </Text>
-                <Text style={{fontSize: 11, color: '#a0a0a0', marginTop: 2, fontWeight: '500'}}>
+                <Text style={{fontSize: 11, color: theme.colors.textSecondary, marginTop: 2, fontWeight: '500'}}>
                   {new Date(item.date || Date.now()).getFullYear()}
                 </Text>
               </View>

@@ -129,7 +129,7 @@ export default function GroupsScreen() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
         <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Select a Category</Text>
         <TouchableOpacity onPress={() => { setEditingCategory(null); setIsCategoryModalVisible(true); }}>
-          <Feather name="plus-circle" size={24} color="#2e2e2e" />
+          <Feather name="plus-circle" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
       </View>
       <View style={styles.categorySelector}>
@@ -214,12 +214,12 @@ export default function GroupsScreen() {
       <View style={{ flex: 1 }}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedCategory(null)}>
-            <Feather name="arrow-left" size={24} color="#2e2e2e" />
+            <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{selectedCategory.icon || '📦'} {selectedCategory.name}</Text>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity style={styles.backBtn} onPress={() => { setEditingCategory(selectedCategory); setIsCategoryModalVisible(true); }}>
-              <Feather name="edit-2" size={20} color="#2e2e2e" />
+              <Feather name="edit-2" size={20} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -263,28 +263,28 @@ export default function GroupsScreen() {
               {Platform.OS === 'web' ? (
                 React.createElement('input', {
                   type: 'date',
-                  style: { flex: 1, padding: '10px 15px', borderRadius: '12px', border: '1px solid #f0f0f0', outline: 'none', color: '#2e2e2e', fontFamily: 'inherit' },
+                  style: { flex: 1, padding: '10px 15px', borderRadius: '12px', border: `1px solid ${theme.colors.border}`, outline: 'none', color: theme.colors.textPrimary, backgroundColor: theme.colors.surface, fontFamily: 'inherit' },
                   value: dateFrom,
                   onChange: e => setDateFrom(e.target.value)
                 })
               ) : (
                 <View style={styles.datePickerWrapper}>
                   <Text style={{color: '#888', flex: 1}}>{dateFrom || 'mm/dd/yyyy'}</Text>
-                  <Feather name="calendar" size={16} color="#2e2e2e" />
+                  <Feather name="calendar" size={16} color={theme.colors.textPrimary} />
                 </View>
               )}
               <Text style={styles.dateRangeTo}>to</Text>
               {Platform.OS === 'web' ? (
                 React.createElement('input', {
                   type: 'date',
-                  style: { flex: 1, padding: '10px 15px', borderRadius: '12px', border: '1px solid #f0f0f0', outline: 'none', color: '#2e2e2e', fontFamily: 'inherit' },
+                  style: { flex: 1, padding: '10px 15px', borderRadius: '12px', border: `1px solid ${theme.colors.border}`, outline: 'none', color: theme.colors.textPrimary, backgroundColor: theme.colors.surface, fontFamily: 'inherit' },
                   value: dateTo,
                   onChange: e => setDateTo(e.target.value)
                 })
               ) : (
                 <View style={styles.datePickerWrapper}>
                   <Text style={{color: '#888', flex: 1}}>{dateTo || 'mm/dd/yyyy'}</Text>
-                  <Feather name="calendar" size={16} color="#2e2e2e" />
+                  <Feather name="calendar" size={16} color={theme.colors.textPrimary} />
                 </View>
               )}
             </View>
@@ -305,16 +305,16 @@ export default function GroupsScreen() {
                     return yValue;
                   }}
                   chartConfig={{
-                    backgroundColor: '#ffffff',
-                    backgroundGradientFrom: '#ffffff',
-                    backgroundGradientTo: '#ffffff',
+                    backgroundColor: theme.colors.surface,
+                    backgroundGradientFrom: theme.colors.surface,
+                    backgroundGradientTo: theme.colors.surface,
                     decimalPlaces: 0,
-                    color: () => '#2e2e2e',
-                    labelColor: () => '#888888',
+                    color: () => theme.colors.textPrimary,
+                    labelColor: () => theme.colors.textSecondary,
                     barPercentage: 0.5,
-                    fillShadowGradient: '#2e2e2e',
+                    fillShadowGradient: theme.colors.textPrimary,
                     fillShadowGradientOpacity: 1,
-                    propsForBackgroundLines: { strokeWidth: 1, stroke: '#f0f0f0', strokeDasharray: '0' },
+                    propsForBackgroundLines: { strokeWidth: 1, stroke: theme.colors.border, strokeDasharray: '0' },
                   }}
                   showBarTops={false}
                   fromZero={true}

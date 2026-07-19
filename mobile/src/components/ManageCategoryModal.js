@@ -123,7 +123,7 @@ export default function ManageCategoryModal({ visible, category, groupId, onClos
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{category ? 'Edit Category' : 'New Category'}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Feather name="x" size={24} color="#2e2e2e" />
+              <Feather name="x" size={24} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </View>
 

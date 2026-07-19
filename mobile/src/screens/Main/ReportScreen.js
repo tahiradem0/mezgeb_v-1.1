@@ -154,7 +154,7 @@ export default function ReportScreen() {
       <View style={styles.header}>
         <Title style={styles.headerTitle}>Reports</Title>
         <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilters(!showFilters)}>
-          <Feather name="filter" size={20} color="#2e2e2e" />
+          <Feather name="filter" size={20} color={theme.colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -197,7 +197,7 @@ export default function ReportScreen() {
             {Platform.OS === 'web' ? (
               React.createElement('input', {
                 type: 'date',
-                style: { flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #f0f0f0', outline: 'none', color: '#2e2e2e', fontFamily: 'inherit' },
+                style: { flex: 1, padding: '10px', borderRadius: '8px', border: `1px solid ${theme.colors.border}`, outline: 'none', color: theme.colors.textPrimary, backgroundColor: theme.colors.surface, fontFamily: 'inherit' },
                 value: dateFrom,
                 onChange: e => setDateFrom(e.target.value)
               })
@@ -214,7 +214,7 @@ export default function ReportScreen() {
             {Platform.OS === 'web' ? (
               React.createElement('input', {
                 type: 'date',
-                style: { flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #f0f0f0', outline: 'none', color: '#2e2e2e', fontFamily: 'inherit' },
+                style: { flex: 1, padding: '10px', borderRadius: '8px', border: `1px solid ${theme.colors.border}`, outline: 'none', color: theme.colors.textPrimary, backgroundColor: theme.colors.surface, fontFamily: 'inherit' },
                 value: dateTo,
                 onChange: e => setDateTo(e.target.value)
               })
@@ -266,10 +266,10 @@ export default function ReportScreen() {
                 }}
               >
                 <View style={{flex: 1.4}}>
-                  <Text style={[styles.tableCellDate, { fontWeight: '700', color: '#2e2e2e', fontSize: 13 }]}>
+                  <Text style={[styles.tableCellDate, { fontWeight: '700', color: theme.colors.textPrimary, fontSize: 13 }]}>
                     {new Date(item.date || Date.now()).toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
                   </Text>
-                  <Text style={{fontSize: 11, color: '#a0a0a0', marginTop: 2, fontWeight: '500'}}>
+                  <Text style={{fontSize: 11, color: theme.colors.textSecondary, marginTop: 2, fontWeight: '500'}}>
                     {new Date(item.date || Date.now()).getFullYear()}
                   </Text>
                 </View>

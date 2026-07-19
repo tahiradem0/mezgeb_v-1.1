@@ -37,11 +37,11 @@ const CustomWebCalendar = ({ value, onChange, onClose }) => {
   return (
     <View style={{ marginTop: 10, marginBottom: 15, padding: 15, backgroundColor: '#ffffff', borderRadius: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, elevation: 4, borderWidth: 1, borderColor: '#f0f0f0' }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-        <TouchableOpacity onPress={prevMonth} style={{ padding: 5 }}><Feather name="chevron-left" size={20} color="#2e2e2e" /></TouchableOpacity>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#2e2e2e' }}>
+        <TouchableOpacity onPress={prevMonth} style={{ padding: 5 }}><Feather name="chevron-left" size={20} color={theme.colors.textPrimary} /></TouchableOpacity>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.textPrimary }}>
           {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </Text>
-        <TouchableOpacity onPress={nextMonth} style={{ padding: 5 }}><Feather name="chevron-right" size={20} color="#2e2e2e" /></TouchableOpacity>
+        <TouchableOpacity onPress={nextMonth} style={{ padding: 5 }}><Feather name="chevron-right" size={20} color={theme.colors.textPrimary} /></TouchableOpacity>
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {dayNames.map((day, i) => (
@@ -62,13 +62,13 @@ const CustomWebCalendar = ({ value, onChange, onClose }) => {
                 aspectRatio: 1,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: isSelected ? '#2e2e2e' : (isToday ? '#f0f0f0' : 'transparent'),
+                backgroundColor: isSelected ? theme.colors.textPrimary : (isToday ? theme.colors.border : 'transparent'),
                 borderRadius: 20,
                 marginBottom: 5,
               }}
             >
               {dateObj && (
-                <Text style={{ fontSize: 14, color: isSelected ? '#ffffff' : '#2e2e2e', fontWeight: isSelected ? '700' : '500' }}>
+                <Text style={{ fontSize: 14, color: isSelected ? theme.colors.surface : theme.colors.textPrimary, fontWeight: isSelected ? '700' : '500' }}>
                   {dateObj.getDate()}
                 </Text>
               )}
@@ -214,7 +214,7 @@ export default function ExpensesScreen({ navigation }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Dashboard')}>
-          <Feather name="arrow-left" size={24} color="#2e2e2e" />
+          <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Record Expense</Text>
         <View style={{ width: 40 }} />
@@ -242,7 +242,7 @@ export default function ExpensesScreen({ navigation }) {
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
             <Text style={[styles.label, {marginBottom: 0}]}>Category</Text>
             <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)}>
-              <Feather name="plus-circle" size={24} color="#2e2e2e" />
+              <Feather name="plus-circle" size={24} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </View>
           <View style={styles.categorySelector}>
@@ -254,7 +254,7 @@ export default function ExpensesScreen({ navigation }) {
                   style={[styles.categoryItem, isSelected && styles.categoryItemActive]}
                   onPress={() => setCategoryId(cat._id)}
                 >
-                  <View style={[styles.categoryIconBox, isSelected && styles.categoryIconBoxActive, { backgroundColor: isSelected ? '#ffffff' : `${cat.color || '#2e2e2e'}20` }]}>
+                  <View style={[styles.categoryIconBox, isSelected && styles.categoryIconBoxActive, { backgroundColor: isSelected ? theme.colors.surface : `${cat.color || theme.colors.textPrimary}20` }]}>
                     <Text style={styles.categoryEmoji}>{cat.icon || '📦'}</Text>
                   </View>
                   <Text style={[styles.categoryName, isSelected && styles.categoryNameActive]} numberOfLines={1}>{cat.name}</Text>
