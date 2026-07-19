@@ -5,6 +5,8 @@ import { Feather } from '@expo/vector-icons';
 import { apiClient, addToOfflineQueue } from '../api/client';
 import { generateObjectId } from '../utils/cache';
 import NetInfo from '@react-native-community/netinfo';
+import CustomAlert from '../utils/CustomAlert';
+
 
 export default function ManageCategoryModal({ visible, category, groupId, onClose, onSave, onDelete }) {
   const theme = useTheme();
@@ -31,7 +33,7 @@ export default function ManageCategoryModal({ visible, category, groupId, onClos
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Category name is required');
+      CustomAlert.alert('Error', 'Category name is required');
       return;
     }
 
@@ -63,11 +65,11 @@ export default function ManageCategoryModal({ visible, category, groupId, onClos
           await addToOfflineQueue({ method: 'POST', url: '/categories', data: newCategory });
           onSave(newCategory); // Optimistic update
         }
-        Alert.alert('Offline', 'Changes saved offline. Will sync when connected.');
+        CustomAlert.alert('Offline', 'Changes saved offline. Will sync when connected.');
       }
     } catch (e) {
       console.error('Error saving category', e);
-      Alert.alert('Error', 'Failed to save category');
+      CustomAlert.alert('Error', 'Failed to save category');
     } finally {
       setIsLoading(false);
     }
@@ -84,12 +86,12 @@ export default function ManageCategoryModal({ visible, category, groupId, onClos
           await apiClient.delete(`/categories/${category._id}`);
         } else {
           await addToOfflineQueue({ method: 'DELETE', url: `/categories/${category._id}` });
-          Alert.alert('Offline', 'Delete saved offline. Will sync when connected.');
+          CustomAlert.alert('Offline', 'Delete saved offline. Will sync when connected.');
         }
         onDelete(category._id);
       } catch (e) {
         console.error('Error deleting category', e);
-        Alert.alert('Error', 'Failed to delete category');
+        CustomAlert.alert('Error', 'Failed to delete category');
       } finally {
         setIsLoading(false);
       }
@@ -101,7 +103,7 @@ export default function ManageCategoryModal({ visible, category, groupId, onClos
         executeDelete();
       }
     } else {
-      Alert.alert('Delete Category', 'Are you sure you want to delete this category?', [
+      CustomAlert.alert('Delete Category', 'Are you sure you want to delete this category?', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: executeDelete }
       ]);

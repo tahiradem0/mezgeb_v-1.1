@@ -5,6 +5,8 @@ import { apiClient } from '../../api/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { TextInput } from 'react-native';
+import CustomAlert from '../../utils/CustomAlert';
+
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -19,7 +21,7 @@ export default function RegisterScreen({ navigation, route }) {
 
   const handleRegister = async () => {
     if (!name || !phone || !password) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      CustomAlert.alert('Error', 'Please fill in all fields.');
       return;
     }
 
@@ -34,7 +36,7 @@ export default function RegisterScreen({ navigation, route }) {
         route.params.setUserToken(token);
       }
     } catch (error) {
-      Alert.alert('Registration Failed', error.response?.data?.error || 'Something went wrong');
+      CustomAlert.alert('Registration Failed', error.response?.data?.error || 'Something went wrong');
     } finally {
       setLoading(false);
     }

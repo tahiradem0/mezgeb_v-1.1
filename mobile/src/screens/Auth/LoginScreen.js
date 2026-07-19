@@ -5,6 +5,8 @@ import { apiClient } from '../../api/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 import { TextInput } from 'react-native';
+import CustomAlert from '../../utils/CustomAlert';
+
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -28,7 +30,7 @@ export default function LoginScreen({ navigation, route }) {
 
   const handleLogin = async () => {
     if (!phone || !password) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      CustomAlert.alert('Error', 'Please fill in all fields.');
       return;
     }
 
@@ -45,7 +47,7 @@ export default function LoginScreen({ navigation, route }) {
         route.params.setUserToken(token);
       }
     } catch (error) {
-      Alert.alert('Login Failed', error.response?.data?.error || 'Invalid credentials. Try again.');
+      CustomAlert.alert('Login Failed', error.response?.data?.error || 'Invalid credentials. Try again.');
     } finally {
       setLoading(false);
     }

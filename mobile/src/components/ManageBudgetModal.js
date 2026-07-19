@@ -4,6 +4,8 @@ import { Text, useTheme } from 'react-native-paper';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
 import NetInfo from '@react-native-community/netinfo';
+import CustomAlert from '../utils/CustomAlert';
+
 
 export default function ManageBudgetModal({ visible, onClose, currentGroupId, groups, user }) {
   const theme = useTheme();
@@ -69,7 +71,7 @@ export default function ManageBudgetModal({ visible, onClose, currentGroupId, gr
 
   const handleSave = async () => {
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid budget amount.');
+      CustomAlert.alert('Invalid Amount', 'Please enter a valid budget amount.');
       return;
     }
 
@@ -77,7 +79,7 @@ export default function ManageBudgetModal({ visible, onClose, currentGroupId, gr
       setIsLoading(true);
       const netInfo = await NetInfo.fetch();
       if (!netInfo.isConnected) {
-        Alert.alert('Offline', 'You need an internet connection to manage budgets.');
+        CustomAlert.alert('Offline', 'You need an internet connection to manage budgets.');
         return;
       }
 
@@ -88,11 +90,11 @@ export default function ManageBudgetModal({ visible, onClose, currentGroupId, gr
       };
 
       await apiClient.post('/budgets', payload);
-      Alert.alert('Success', 'Budget limit has been saved successfully!');
+      CustomAlert.alert('Success', 'Budget limit has been saved successfully!');
       fetchBudgets();
     } catch (e) {
       console.error('Failed to save budget:', e);
-      Alert.alert('Error', 'Failed to save budget limit.');
+      CustomAlert.alert('Error', 'Failed to save budget limit.');
     } finally {
       setIsLoading(false);
     }

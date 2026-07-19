@@ -13,6 +13,8 @@ import { ThemeContext } from '../../context/ThemeContext';
 import ManageConnectionModal from '../../components/ManageConnectionModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 import ManageBudgetModal from '../../components/ManageBudgetModal';
+import CustomAlert from '../../utils/CustomAlert';
+
 
 export default function SettingsScreen() {
   const { theme, toggleDarkMode } = useContext(ThemeContext);
@@ -97,7 +99,7 @@ export default function SettingsScreen() {
       if (key === 'darkMode') toggleDarkMode(value);
     } catch (error) {
       console.error('Error updating setting:', error);
-      Alert.alert('Error', 'Failed to save setting');
+      CustomAlert.alert('Error', 'Failed to save setting');
       loadProfile(); // Revert on failure
     }
   };
@@ -127,7 +129,7 @@ export default function SettingsScreen() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to upload profile picture');
+      CustomAlert.alert('Error', 'Failed to upload profile picture');
     }
   };
 
@@ -150,17 +152,17 @@ export default function SettingsScreen() {
           setLocalBiometric(false);
           
           if (result.error === 'not_enrolled' || result.error === 'passcode_not_set') {
-            Alert.alert("Unavailable", "Your device does not have a screen lock (PIN, Pattern, or Fingerprint) configured. Please set one up in your device settings first.");
+            CustomAlert.alert("Unavailable", "Your device does not have a screen lock (PIN, Pattern, or Fingerprint) configured. Please set one up in your device settings first.");
           } else if (result.error !== 'user_cancel' && result.error !== 'system_cancel' && result.error !== 'app_cancel') {
             // Alert other unexpected errors so we don't silently fail
-            Alert.alert("Failed", `Authentication failed: ${result.error || 'Unknown'}`);
+            CustomAlert.alert("Failed", `Authentication failed: ${result.error || 'Unknown'}`);
           }
           return;
         }
       } catch (e) {
         setLocalBiometric(false);
         console.error('Biometric toggle error', e);
-        Alert.alert("Error", "Authentication is not available on this device.");
+        CustomAlert.alert("Error", "Authentication is not available on this device.");
         return;
       }
     }
@@ -285,7 +287,7 @@ export default function SettingsScreen() {
         <View style={styles.cardBlock}>
 
           {renderSettingItem('message-circle', 'Contact Us', null, Feather, () => {
-            Linking.openURL('tel:+251978787960').catch((err) => Alert.alert("Error", "Could not open dialer"));
+            Linking.openURL('tel:+251978787960').catch((err) => CustomAlert.alert("Error", "Could not open dialer"));
           })}
         </View>
       </View>
@@ -301,7 +303,7 @@ export default function SettingsScreen() {
         visible={isConnectionModalVisible} 
         onClose={() => setConnectionModalVisible(false)}
         onSuccess={() => {
-          Alert.alert("Check Dashboard", "Your new group space should now be available!");
+          CustomAlert.alert("Check Dashboard", "Your new group space should now be available!");
         }}
       />
 

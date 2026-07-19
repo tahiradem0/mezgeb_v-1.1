@@ -11,6 +11,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ManageCategoryModal from '../../components/ManageCategoryModal';
+import CustomAlert from '../../utils/CustomAlert';
+
 
 const CustomWebCalendar = ({ value, onChange, onClose }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date(value.getFullYear(), value.getMonth(), 1));
@@ -159,7 +161,7 @@ export default function ExpensesScreen({ navigation }) {
 
   const handleSave = async () => {
     if (!amount || !reason || !categoryId) {
-      Alert.alert('Error', 'Please enter amount, reason, and select a category.');
+      CustomAlert.alert('Error', 'Please enter amount, reason, and select a category.');
       return;
     }
 
@@ -194,7 +196,7 @@ export default function ExpensesScreen({ navigation }) {
           url: '/expenses',
           data: expenseData
         });
-        Alert.alert('Offline', 'Expense saved offline. It will sync when connected.');
+        CustomAlert.alert('Offline', 'Expense saved offline. It will sync when connected.');
       }
       setAmount('');
       setReason('');
@@ -204,7 +206,7 @@ export default function ExpensesScreen({ navigation }) {
       navigation.navigate('Dashboard');
     } catch (error) {
       console.error('Error adding expense:', error);
-      Alert.alert('Error', error.response?.data?.error || 'Failed to add expense');
+      CustomAlert.alert('Error', error.response?.data?.error || 'Failed to add expense');
     } finally {
       setSaving(false);
     }

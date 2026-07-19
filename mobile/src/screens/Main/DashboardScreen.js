@@ -18,6 +18,8 @@ import EditExpenseModal from '../../components/EditExpenseModal';
 import NotificationsModal from '../../components/NotificationsModal';
 import { getCache, storeCache } from '../../utils/cache';
 import NetInfo from '@react-native-community/netinfo';
+import CustomAlert from '../../utils/CustomAlert';
+
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -198,7 +200,7 @@ export default function DashboardScreen() {
       fetchDashboardData(currentGroupId);
     } catch (error) {
       console.error('Error deleting expense:', error);
-      Alert.alert('Error', 'Failed to delete expense');
+      CustomAlert.alert('Error', 'Failed to delete expense');
     }
   };
 
@@ -328,7 +330,7 @@ export default function DashboardScreen() {
                 }
               }
               // Also show in-app alert
-              Alert.alert(title, body);
+              CustomAlert.alert(title, body);
               await AsyncStorage.setItem(storageKey, 'true');
             }
           };

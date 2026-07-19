@@ -3,6 +3,8 @@ import { View, StyleSheet, Modal, TouchableOpacity, TextInput, ActivityIndicator
 import { Text, Title, useTheme } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
 import { apiClient } from '../api/client';
+import CustomAlert from '../utils/CustomAlert';
+
 
 export default function ChangePasswordModal({ visible, onClose }) {
   const theme = useTheme();
@@ -16,32 +18,32 @@ export default function ChangePasswordModal({ visible, onClose }) {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields.");
+      CustomAlert.alert("Error", "Please fill in all fields.");
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert("Error", "New password must be at least 6 characters long.");
+      CustomAlert.alert("Error", "New password must be at least 6 characters long.");
       return;
     }
     if (currentPassword === newPassword) {
-      Alert.alert("Error", "New password cannot be the same as the current password.");
+      CustomAlert.alert("Error", "New password cannot be the same as the current password.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "New passwords do not match.");
+      CustomAlert.alert("Error", "New passwords do not match.");
       return;
     }
 
     setLoading(true);
     try {
       await apiClient.patch('/auth/password', { currentPassword, newPassword });
-      Alert.alert("Success", "Password updated successfully!");
+      CustomAlert.alert("Success", "Password updated successfully!");
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       onClose();
     } catch (e) {
-      Alert.alert("Error", e.response?.data?.error || "Failed to change password.");
+      CustomAlert.alert("Error", e.response?.data?.error || "Failed to change password.");
     } finally {
       setLoading(false);
     }

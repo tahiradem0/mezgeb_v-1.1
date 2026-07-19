@@ -11,6 +11,7 @@ import { syncOfflineData } from './src/api/client';
 import AppNavigator from './src/navigation/AppNavigator';
 import BiometricWrapper from './src/components/BiometricWrapper';
 import { ThemeProvider, ThemeContext } from './src/context/ThemeContext';
+import AppleStyleAlert from './src/components/AppleStyleAlert';
 
 // ── Safely configure notifications ──────────────────────────────
 // Wrapped in try-catch so the app doesn't crash if the native module
@@ -88,6 +89,7 @@ const AppRoot = () => {
       <PaperProvider theme={theme}>
         <BiometricWrapper>
           <AppNavigator />
+          <AppleStyleAlert />
         </BiometricWrapper>
       </PaperProvider>
     </SafeAreaProvider>

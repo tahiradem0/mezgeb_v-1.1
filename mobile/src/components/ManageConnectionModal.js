@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import NetInfo from '@react-native-community/netinfo';
 import { createGroup, joinGroup, apiClient } from '../api/client';
+import CustomAlert from '../utils/CustomAlert';
+
 
 export default function ManageConnectionModal({ visible, onClose, onSuccess }) {
   const theme = useTheme();
@@ -64,34 +66,34 @@ export default function ManageConnectionModal({ visible, onClose, onSuccess }) {
       const newId = 'CONN-' + Math.floor(1000 + Math.random() * 9000);
       await AsyncStorage.setItem('myConnectionId', newId);
       setMyConnectionId(newId);
-      Alert.alert('Success', 'New ID generated!');
+      CustomAlert.alert('Success', 'New ID generated!');
     } catch (e) {}
   };
 
   const copyToClipboard = async () => {
     await Clipboard.setStringAsync(myConnectionId);
-    Alert.alert('Success', 'Copied to clipboard!');
+    CustomAlert.alert('Success', 'Copied to clipboard!');
   };
 
   const handleCreate = async () => {
     const netInfo = await NetInfo.fetch();
     if (!netInfo.isConnected) {
-      Alert.alert('Offline', 'Please connect to the internet to create a new group.');
+      CustomAlert.alert('Offline', 'Please connect to the internet to create a new group.');
       return;
     }
     if (!groupName.trim()) {
-      Alert.alert('Error', 'Please enter a group name');
+      CustomAlert.alert('Error', 'Please enter a group name');
       return;
     }
     try {
       setLoading(true);
       await createGroup(groupName.trim(), myConnectionId);
-      Alert.alert('Success', 'Group created! Share the ID with your partner.');
+      CustomAlert.alert('Success', 'Group created! Share the ID with your partner.');
       setGroupName('');
       onSuccess(); // Triggers reload
       onClose();
     } catch (e) {
-      Alert.alert('Error', e.response?.data?.error || e.message || 'Failed to create connection');
+      CustomAlert.alert('Error', e.response?.data?.error || e.message || 'Failed to create connection');
     } finally {
       setLoading(false);
     }
@@ -100,23 +102,23 @@ export default function ManageConnectionModal({ visible, onClose, onSuccess }) {
   const handleJoin = async () => {
     const netInfo = await NetInfo.fetch();
     if (!netInfo.isConnected) {
-      Alert.alert('Offline', 'Please connect to the internet to join a group.');
+      CustomAlert.alert('Offline', 'Please connect to the internet to join a group.');
       return;
     }
     if (!partnerPhone.trim() || !joinConnectionId.trim()) {
-      Alert.alert('Error', 'Please enter partner phone number and connection ID');
+      CustomAlert.alert('Error', 'Please enter partner phone number and connection ID');
       return;
     }
     try {
       setLoading(true);
       await joinGroup(partnerPhone.trim(), joinConnectionId.trim());
-      Alert.alert('Success', 'Successfully connected to group!');
+      CustomAlert.alert('Success', 'Successfully connected to group!');
       setPartnerPhone('');
       setJoinConnectionId('');
       onSuccess(); // Triggers reload
       onClose();
     } catch (e) {
-      Alert.alert('Error', e.response?.data?.error || e.message || 'Failed to join connection');
+      CustomAlert.alert('Error', e.response?.data?.error || e.message || 'Failed to join connection');
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,8 @@ import { apiClient, addToOfflineQueue } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
 import NetInfo from '@react-native-community/netinfo';
 import EditExpenseModal from '../../components/EditExpenseModal';
+import CustomAlert from '../../utils/CustomAlert';
+
 
 export default function ReportScreen() {
   const theme = useTheme();
@@ -122,7 +124,7 @@ export default function ReportScreen() {
       fetchData(groupId);
     } catch (error) {
       console.error('Error deleting expense:', error);
-      Alert.alert('Error', 'Failed to delete expense');
+      CustomAlert.alert('Error', 'Failed to delete expense');
     }
   };
 
