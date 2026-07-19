@@ -278,12 +278,7 @@ export default function SettingsScreen() {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Preferences</Text>
         <View style={styles.cardBlock}>
-          {renderSettingItem('globe', 'Language', settings.language, Feather, () => {
-            const langs = ['English', 'Amharic', 'Oromo'];
-            const next = langs[(langs.indexOf(settings.language) + 1) % langs.length];
-            updateSetting('language', next);
-          })}
-          <View style={styles.divider} />
+
           {renderToggleItem('moon', 'Dark Mode', settings.darkMode, (v) => updateSetting('darkMode', v))}
           <View style={styles.divider} />
 
