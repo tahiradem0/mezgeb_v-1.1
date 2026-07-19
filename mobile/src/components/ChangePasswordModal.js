@@ -9,11 +9,22 @@ export default function ChangePasswordModal({ visible, onClose }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert("Error", "New password must be at least 6 characters long.");
+      return;
+    }
+    if (currentPassword === newPassword) {
+      Alert.alert("Error", "New password cannot be the same as the current password.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -49,34 +60,49 @@ export default function ChangePasswordModal({ visible, onClose }) {
 
           <View style={styles.formContainer}>
             <Text style={[styles.label, { color: theme.colors.textPrimary }]}>Current Password</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.colors.background, color: theme.colors.textPrimary }]}
-              secureTextEntry
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              placeholder="Enter current password"
-              placeholderTextColor={theme.colors.textMuted}
-            />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.background }]}>
+              <TextInput
+                style={[styles.inputElement, { color: theme.colors.textPrimary }]}
+                secureTextEntry={!showCurrentPassword}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                placeholder="Enter current password"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+              <TouchableOpacity onPress={() => setShowCurrentPassword(!showCurrentPassword)} style={styles.eyeIcon}>
+                <Feather name={showCurrentPassword ? "eye" : "eye-off"} size={20} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
 
             <Text style={[styles.label, { color: theme.colors.textPrimary }]}>New Password</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.colors.background, color: theme.colors.textPrimary }]}
-              secureTextEntry
-              value={newPassword}
-              onChangeText={setNewPassword}
-              placeholder="Enter new password"
-              placeholderTextColor={theme.colors.textMuted}
-            />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.background }]}>
+              <TextInput
+                style={[styles.inputElement, { color: theme.colors.textPrimary }]}
+                secureTextEntry={!showNewPassword}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Enter new password"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+              <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)} style={styles.eyeIcon}>
+                <Feather name={showNewPassword ? "eye" : "eye-off"} size={20} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
 
             <Text style={[styles.label, { color: theme.colors.textPrimary }]}>Confirm New Password</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.colors.background, color: theme.colors.textPrimary }]}
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Confirm new password"
-              placeholderTextColor={theme.colors.textMuted}
-            />
+            <View style={[styles.inputWrapper, { backgroundColor: theme.colors.background }]}>
+              <TextInput
+                style={[styles.inputElement, { color: theme.colors.textPrimary }]}
+                secureTextEntry={!showConfirmPassword}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirm new password"
+                placeholderTextColor={theme.colors.textMuted}
+              />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+                <Feather name={showConfirmPassword ? "eye" : "eye-off"} size={20} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity 
               style={[styles.saveBtn, { backgroundColor: theme.colors.primary }]}
@@ -133,13 +159,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 50,
     borderRadius: 12,
     paddingHorizontal: 15,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: '#f9f9f9', // Using theme color in component style would be better but this acts as fallback
+  },
+  inputElement: {
+    flex: 1,
+    height: '100%',
+    fontSize: 16,
+  },
+  eyeIcon: {
+    padding: 5,
   },
   saveBtn: {
     height: 50,
