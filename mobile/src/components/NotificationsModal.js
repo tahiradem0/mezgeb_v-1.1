@@ -3,7 +3,7 @@ import { View, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-nat
 import { Text, Title, useTheme } from 'react-native-paper';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function NotificationsModal({ visible, onClose, expenses, user }) {
+export default function NotificationsModal({ visible, onClose, expenses, user, budgetLimit = 0, periodTotal = 0, period = 'Monthly' }) {
   const theme = useTheme();
 
   const notifications = useMemo(() => {
@@ -19,29 +19,27 @@ export default function NotificationsModal({ visible, onClose, expenses, user })
       return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
     });
     
-    const monthTotal = monthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const budgetLimit = user?.settings?.budgetLimit || 10000;
     const budgetAlertEnabled = user?.settings?.budgetAlertEnabled !== false;
 
     // Budget Alerts
-    if (monthTotal > budgetLimit && budgetAlertEnabled) {
+    if (periodTotal > budgetLimit && budgetLimit > 0 && budgetAlertEnabled) {
       notifs.push({
         id: 'auto-budget-err',
         type: 'alert',
         icon: 'alert-circle',
         color: theme.colors.error,
         title: 'Budget Exceeded!',
-        text: `You've spent ${monthTotal.toLocaleString()} ETB this month, exceeding your ${budgetLimit.toLocaleString()} ETB limit.`,
+        text: `You've spent ${periodTotal.toLocaleString()} ETB this ${period.toLowerCase()}, exceeding your ${budgetLimit.toLocaleString()} ETB limit.`,
         time: 'Now'
       });
-    } else if (monthTotal > budgetLimit * 0.8 && budgetAlertEnabled) {
+    } else if (periodTotal > budgetLimit * 0.8 && budgetLimit > 0 && budgetAlertEnabled) {
       notifs.push({
         id: 'auto-budget-warn',
         type: 'warning',
         icon: 'alert',
         color: '#ff9800', // Orange warning
         title: 'Budget Warning',
-        text: `You've used ${Math.round((monthTotal / budgetLimit) * 100)}% of your monthly budget.`,
+        text: `You've used ${Math.round((periodTotal / budgetLimit) * 100)}% of your ${period.toLowerCase()} budget.`,
         time: 'Now'
       });
     }
@@ -62,7 +60,7 @@ export default function NotificationsModal({ visible, onClose, expenses, user })
     }
 
     return notifs;
-  }, [expenses, user]);
+  }, [expenses, user, budgetLimit, periodTotal, period]);
 
   return (
     <Modal

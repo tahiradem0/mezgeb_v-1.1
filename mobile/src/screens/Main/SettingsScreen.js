@@ -12,6 +12,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { ThemeContext } from '../../context/ThemeContext';
 import ManageConnectionModal from '../../components/ManageConnectionModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
+import ManageBudgetModal from '../../components/ManageBudgetModal';
 
 export default function SettingsScreen() {
   const { theme, toggleDarkMode } = useContext(ThemeContext);
@@ -28,6 +29,8 @@ export default function SettingsScreen() {
   });
   const [isConnectionModalVisible, setConnectionModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
+  const [isBudgetModalVisible, setBudgetModalVisible] = useState(false);
+  const [groups, setGroups] = useState([]);
 
   useEffect(() => {
     loadProfile();
@@ -44,9 +47,13 @@ export default function SettingsScreen() {
         if (parsed.settings) setSettings(parsed.settings);
       }
       
-      // 2. Fetch fresh profile
-      const res = await apiClient.get('/auth/me');
+      // 2. Fetch fresh profile and groups
+      const [res, groupsRes] = await Promise.all([
+        apiClient.get('/auth/me'),
+        apiClient.get('/groups')
+      ]);
       setUser(res.data);
+      setGroups(groupsRes.data);
       setLocalBiometric(res.data.biometricEnabled || false);
       if (res.data.settings) setSettings(res.data.settings);
       await AsyncStorage.setItem('currentUser', JSON.stringify(res.data));
@@ -125,24 +132,7 @@ export default function SettingsScreen() {
   };
 
   const handleBudgetChange = () => {
-    if (Platform.OS === 'web') {
-      const val = window.prompt("Enter new budget limit:", settings.budgetLimit);
-      if (val && !isNaN(val)) updateSetting('budgetLimit', Number(val));
-    } else {
-      Alert.prompt(
-        "Budget Limit",
-        "Enter your new monthly budget limit",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Save", onPress: (val) => {
-            if (val && !isNaN(val)) updateSetting('budgetLimit', Number(val));
-          }}
-        ],
-        "plain-text",
-        settings.budgetLimit.toString(),
-        "numeric"
-      );
-    }
+    setBudgetModalVisible(true);
   };
 
   const handleBiometricToggle = async (value) => {
@@ -282,7 +272,7 @@ export default function SettingsScreen() {
           {renderToggleItem('moon', 'Dark Mode', settings.darkMode, (v) => updateSetting('darkMode', v))}
           <View style={styles.divider} />
 
-          {renderSettingItem('target', 'Budget Limit', `${settings.currency} ${settings.budgetLimit}`, Feather, handleBudgetChange)}
+          {renderSettingItem('target', 'Manage Budgets', null, Feather, handleBudgetChange)}
           <View style={styles.divider} />
           {renderToggleItem('bell', 'Budget Alerts', settings.budgetAlertEnabled, (v) => updateSetting('budgetAlertEnabled', v))}
           <View style={styles.divider} />
@@ -318,6 +308,13 @@ export default function SettingsScreen() {
       <ChangePasswordModal 
         visible={isPasswordModalVisible}
         onClose={() => setPasswordModalVisible(false)}
+      />
+
+      <ManageBudgetModal 
+        visible={isBudgetModalVisible}
+        onClose={() => setBudgetModalVisible(false)}
+        groups={groups}
+        user={user}
       />
     </ScrollView>
   );

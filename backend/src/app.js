@@ -19,6 +19,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/groups', require('./routes/groups'));
+app.use('/api/budgets', require('./routes/budgets'));
 
 // Health check
 app.get('/health', (req, res) => {

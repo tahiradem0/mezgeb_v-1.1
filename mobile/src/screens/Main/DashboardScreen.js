@@ -26,6 +26,7 @@ export default function DashboardScreen() {
   const [categories, setCategories] = useState([]);
   const [user, setUser] = useState(null);
   const [groups, setGroups] = useState([]);
+  const [budgets, setBudgets] = useState([]);
   const [currentGroupId, setCurrentGroupId] = useState(null);
   const [analyticsPeriod, setAnalyticsPeriod] = useState('Yearly');
   const [refreshing, setRefreshing] = useState(false);
@@ -129,10 +130,11 @@ export default function DashboardScreen() {
         categoriesUrl += `?groupId=${groupId}`;
       }
 
-      const [expRes, catRes, groupRes] = await Promise.all([
+      const [expRes, catRes, groupRes, budgetRes] = await Promise.all([
         apiClient.get(expensesUrl),
         apiClient.get(categoriesUrl),
-        apiClient.get('/groups')
+        apiClient.get('/groups'),
+        apiClient.get('/budgets') // fetch budgets for user
       ]);
       
       // Prevent race conditions: if user switched groups while fetching, discard this result.
@@ -144,6 +146,7 @@ export default function DashboardScreen() {
       setExpenses(expRes.data);
       setCategories(catRes.data);
       setGroups(groupRes.data);
+      setBudgets(budgetRes.data);
       
       storeCache(expensesCacheKey, expRes.data);
       storeCache(categoriesCacheKey, catRes.data);
@@ -273,16 +276,39 @@ export default function DashboardScreen() {
   const badgeBgColor = isIncrease ? `${theme.colors.error}40` : `${theme.colors.success}40`;
 
   // Budget calculations
-  const budgetLimit = user?.settings?.budgetLimit || 0;
-  const budgetProgress = budgetLimit > 0 ? Math.min(thisMonthTotal / budgetLimit, 1) : 0;
-  const isOverBudget = budgetLimit > 0 && thisMonthTotal > budgetLimit;
-  const isNearBudget = budgetLimit > 0 && thisMonthTotal > budgetLimit * 0.8 && !isOverBudget;
+  const activeBudget = budgets.find(b => 
+    (currentGroupId === null && b.groupId === null) || 
+    (b.groupId === currentGroupId)
+  );
+  const budgetLimit = activeBudget ? activeBudget.amount : 0;
+  
+  // Calculate total for the specific budget period
+  let periodTotal = 0;
+  if (activeBudget) {
+    if (activeBudget.period === 'Weekly') {
+      const now = new Date();
+      const weekStart = new Date(now.setDate(now.getDate() - now.getDay())); // Sunday
+      weekStart.setHours(0,0,0,0);
+      periodTotal = expenses.filter(e => new Date(e.date) >= weekStart).reduce((sum, e) => sum + e.amount, 0);
+    } else if (activeBudget.period === 'Yearly') {
+      periodTotal = expenses.filter(e => new Date(e.date).getFullYear() === currentYear).reduce((sum, e) => sum + e.amount, 0);
+    } else {
+      // Monthly default
+      periodTotal = thisMonthTotal;
+    }
+  } else {
+    periodTotal = thisMonthTotal; // Fallback for UI if no budget
+  }
+
+  const budgetProgress = budgetLimit > 0 ? Math.min(periodTotal / budgetLimit, 1) : 0;
+  const isOverBudget = budgetLimit > 0 && periodTotal > budgetLimit;
+  const isNearBudget = budgetLimit > 0 && periodTotal > budgetLimit * 0.8 && !isOverBudget;
 
   // Budget Alert Notification Check
   useEffect(() => {
     const checkBudget = async () => {
       try {
-        if (user?.settings?.budgetAlertEnabled && user?.settings?.budgetLimit > 0) {
+        if (user?.settings?.budgetAlertEnabled && budgetLimit > 0) {
           
           const notify = async (title, body, storageKey) => {
             const alreadySent = await AsyncStorage.getItem(storageKey);
@@ -307,17 +333,17 @@ export default function DashboardScreen() {
             }
           };
 
-          if (thisMonthTotal > user.settings.budgetLimit) {
+          if (periodTotal > budgetLimit) {
             await notify(
               "⚠️ Budget Exceeded!", 
-              `You have spent ${thisMonthTotal.toLocaleString()} ETB this month, exceeding your limit of ${user.settings.budgetLimit.toLocaleString()} ETB.`,
-              `budget_alert_100_${currentMonth}_${currentYear}`
+              `You have spent ${periodTotal.toLocaleString()} ETB this ${activeBudget.period.toLowerCase()}, exceeding your limit of ${budgetLimit.toLocaleString()} ETB.`,
+              `budget_alert_100_${activeBudget.period}_${currentGroupId || 'personal'}_${currentMonth}_${currentYear}`
             );
-          } else if (thisMonthTotal > user.settings.budgetLimit * 0.8) {
+          } else if (periodTotal > budgetLimit * 0.8) {
             await notify(
               "⚠️ Approaching Budget Limit", 
-              `You have spent ${thisMonthTotal.toLocaleString()} ETB this month. You are at ${Math.round((thisMonthTotal / user.settings.budgetLimit) * 100)}% of your limit.`,
-              `budget_alert_80_${currentMonth}_${currentYear}`
+              `You have spent ${periodTotal.toLocaleString()} ETB this ${activeBudget.period.toLowerCase()}. You are at ${Math.round((periodTotal / budgetLimit) * 100)}% of your limit.`,
+              `budget_alert_80_${activeBudget.period}_${currentGroupId || 'personal'}_${currentMonth}_${currentYear}`
             );
           }
         }
@@ -326,10 +352,10 @@ export default function DashboardScreen() {
       }
     };
     
-    if (thisMonthTotal > 0 && user) {
+    if (periodTotal > 0 && user && activeBudget) {
       checkBudget();
     }
-  }, [thisMonthTotal, user, currentMonth, currentYear]);
+  }, [periodTotal, user, activeBudget, currentMonth, currentYear, currentGroupId]);
 
   // Socket.IO Real-Time Sync
   useEffect(() => {
@@ -470,9 +496,9 @@ export default function DashboardScreen() {
         {budgetLimit > 0 && (
           <View style={{ marginTop: 15 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-              <Text style={{ color: '#888', fontSize: 12 }}>Budget Progress</Text>
+              <Text style={{ color: '#888', fontSize: 12 }}>{activeBudget?.period || 'Monthly'} Budget Progress</Text>
               <Text style={{ color: isOverBudget ? theme.colors.error : '#888', fontSize: 12, fontWeight: 'bold' }}>
-                {isPrivate ? '****' : `${Math.round((thisMonthTotal / budgetLimit) * 100)}%`}
+                {isPrivate ? '****' : `${Math.round((periodTotal / budgetLimit) * 100)}%`}
               </Text>
             </View>
             <View style={{ height: 6, backgroundColor: '#333', borderRadius: 3, overflow: 'hidden' }}>
@@ -759,6 +785,9 @@ export default function DashboardScreen() {
         onClose={() => setIsNotificationsModalVisible(false)}
         expenses={expenses}
         user={user}
+        budgetLimit={budgetLimit}
+        periodTotal={periodTotal}
+        period={activeBudget?.period || 'Monthly'}
       />
     </ScrollView>
   );
