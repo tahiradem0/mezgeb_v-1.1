@@ -116,21 +116,32 @@ export default function ExpensesScreen({ navigation }) {
     }, [])
   );
 
+  const extractUniqueReasons = (expenseList) => {
+    const map = new Map();
+    expenseList.forEach(exp => {
+      if (exp.reason) {
+        const key = exp.reason.toLowerCase().trim();
+        if (!map.has(key)) {
+          map.set(key, { reason: exp.reason, categoryId: exp.categoryId?._id || exp.categoryId });
+        }
+      }
+    });
+    return Array.from(map.values());
+  };
+
   const fetchPreviousReasons = async (currentGroupId) => {
     try {
       const contextKey = currentGroupId || 'personal';
       const expensesCacheKey = `dashboard_expenses_${contextKey}`;
       const cachedExpenses = await getCache(expensesCacheKey);
       if (cachedExpenses) {
-        const uniqueReasons = [...new Set(cachedExpenses.map(exp => exp.reason).filter(Boolean))];
-        setPreviousReasons(uniqueReasons);
+        setPreviousReasons(extractUniqueReasons(cachedExpenses));
       }
 
       const url = currentGroupId ? `/expenses?groupId=${currentGroupId}` : '/expenses';
       const response = await apiClient.get(url);
       if (currentGroupId !== activeGroupRef.current) return;
-      const uniqueReasons = [...new Set(response.data.map(exp => exp.reason).filter(Boolean))];
-      setPreviousReasons(uniqueReasons);
+      setPreviousReasons(extractUniqueReasons(response.data));
     } catch (error) {
       console.error('Error fetching expenses for reasons:', error);
     }
@@ -333,7 +344,7 @@ export default function ExpensesScreen({ navigation }) {
               onChangeText={(text) => {
                 setReason(text);
                 if (text.length >= 2) {
-                  const filtered = previousReasons.filter(r => r.toLowerCase().includes(text.toLowerCase()));
+                  const filtered = previousReasons.filter(r => r.reason.toLowerCase().includes(text.toLowerCase()));
                   setFilteredReasons(filtered.slice(0, 5));
                   setShowSuggestions(true);
                 } else {
@@ -353,23 +364,33 @@ export default function ExpensesScreen({ navigation }) {
           {/* Autocomplete Dropdown */}
           {showSuggestions && filteredReasons.length > 0 && (
             <View style={styles.autocompleteDropdown}>
-              {filteredReasons.map((suggestion, index) => (
-                <TouchableOpacity 
-                  key={index} 
-                  style={[
-                    styles.autocompleteItem,
-                    index === filteredReasons.length - 1 && { borderBottomWidth: 0 }
-                  ]}
-                  onPress={() => {
-                    setReason(suggestion);
-                    setShowSuggestions(false);
-                    Keyboard.dismiss();
-                  }}
-                >
-                  <Text style={styles.suggestionIcon}>💡</Text>
-                  <Text style={styles.suggestionText} numberOfLines={1}>{suggestion}</Text>
-                </TouchableOpacity>
-              ))}
+              {filteredReasons.map((suggestion, index) => {
+                const cat = categories.find(c => c._id === suggestion.categoryId);
+                return (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={[
+                      styles.autocompleteItem,
+                      index === filteredReasons.length - 1 && { borderBottomWidth: 0 }
+                    ]}
+                    onPress={() => {
+                      setReason(suggestion.reason);
+                      if (suggestion.categoryId) setCategoryId(suggestion.categoryId);
+                      setShowSuggestions(false);
+                      Keyboard.dismiss();
+                    }}
+                  >
+                    <View style={[styles.suggestionIconBox, { backgroundColor: cat ? `${cat.color || theme.colors.textPrimary}20` : '#f0f0f0' }]}>
+                      <Text style={styles.suggestionEmoji}>{cat?.icon || '💡'}</Text>
+                    </View>
+                    <View style={{flex: 1}}>
+                      <Text style={styles.suggestionText} numberOfLines={1}>{suggestion.reason}</Text>
+                      {cat && <Text style={styles.suggestionCatName}>{cat.name}</Text>}
+                    </View>
+                    <Feather name="arrow-up-left" size={16} color="#cccccc" />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </View>
@@ -597,15 +618,26 @@ const createStyles = (theme) => StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.background,
   },
-  suggestionIcon: {
+  suggestionIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  suggestionEmoji: {
     fontSize: 16,
-    marginRight: 10,
   },
   suggestionText: {
     fontSize: 14,
     color: theme.colors.textPrimary,
-    fontWeight: '500',
-    flex: 1,
+    fontWeight: '600',
+  },
+  suggestionCatName: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   },
   dateOptions: {
     flexDirection: 'row',

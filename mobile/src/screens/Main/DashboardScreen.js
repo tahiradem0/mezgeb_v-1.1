@@ -14,6 +14,7 @@ import { apiClient, addToOfflineQueue, API_BASE_URL } from '../../api/client';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { FlingGestureHandler, Directions, State } from 'react-native-gesture-handler';
 import EditExpenseModal from '../../components/EditExpenseModal';
 import NotificationsModal from '../../components/NotificationsModal';
 import { getCache, storeCache } from '../../utils/cache';
@@ -223,21 +224,7 @@ export default function DashboardScreen() {
     AsyncStorage.setItem('activeGroupId', newGroupId || 'personal');
   };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dx) > 30 && Math.abs(gestureState.dy) < 30;
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        if (gestureState.dx > 50) {
-          switchContext('prev'); // Swiped Right
-        } else if (gestureState.dx < -50) {
-          switchContext('next'); // Swiped Left
-        }
-      }
-    })
-  ).current;
+  // Removed PanResponder, using FlingGestureHandler instead for better ScrollView compatibility
 
 
   // Calculate Total
@@ -469,7 +456,19 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      <View {...panResponder.panHandlers}>
+      <FlingGestureHandler
+        direction={Directions.LEFT}
+        onHandlerStateChange={({ nativeEvent }) => {
+          if (nativeEvent.state === State.ACTIVE) switchContext('next');
+        }}
+      >
+        <FlingGestureHandler
+          direction={Directions.RIGHT}
+          onHandlerStateChange={({ nativeEvent }) => {
+            if (nativeEvent.state === State.ACTIVE) switchContext('prev');
+          }}
+        >
+          <View style={{ flex: 1 }}>
 
       {/* Dark Expense Summary Card */}
       <View style={styles.summaryCard}>
@@ -768,7 +767,9 @@ export default function DashboardScreen() {
           )
         })}
       </View>
-      </View>
+          </View>
+        </FlingGestureHandler>
+      </FlingGestureHandler>
 
       <EditExpenseModal 
         visible={isEditModalVisible}

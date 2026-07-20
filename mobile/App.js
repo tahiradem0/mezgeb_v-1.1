@@ -1,4 +1,5 @@
 import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React, { useEffect, useContext, Component } from 'react';
 import { View, Text as RNText, LogBox, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -140,10 +141,12 @@ export default function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <AppRoot />
-      </ThemeProvider>
-    </ErrorBoundary>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <AppRoot />
+        </ThemeProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
