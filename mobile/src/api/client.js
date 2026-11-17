@@ -2,10 +2,26 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { DeviceEventEmitter, Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-// Default development fallback: 10.0.2.2 for Android emulator, localhost for iOS/web
-const DEFAULT_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
-export const API_BASE_URL = DEFAULT_URL;
+// Automatically detect host computer IP when running via Expo Go on physical phone
+const getInitialBaseUrl = () => {
+  try {
+    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.debuggerHost || '';
+    if (hostUri) {
+      const ip = hostUri.split(':')[0];
+      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+        return `http://${ip}:5000/api`;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not read hostUri from Constants', e);
+  }
+  // Default fallback to computer's local Wi-Fi IP
+  return 'http://10.36.157.230:5000/api';
+};
+
+export const API_BASE_URL = getInitialBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
