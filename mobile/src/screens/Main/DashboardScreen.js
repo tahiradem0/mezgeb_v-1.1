@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Image, RefreshControl, PanResponder, Alert } from 'react-native';
 import { Text, Title } from 'react-native-paper';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme } from '../../theme';
 import * as ImagePicker from 'expo-image-picker';
 let Notifications = null;
 try {
@@ -37,7 +38,8 @@ export default function DashboardScreen() {
   const [analyticsPeriod, setAnalyticsPeriod] = useState('Yearly');
   const [refreshing, setRefreshing] = useState(false);
   const [tooltipData, setTooltipData] = useState(null);
-  const theme = useTheme();
+  const themeContext = useContext(ThemeContext);
+  const theme = themeContext?.theme || lightTheme;
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
   const activeGroupRef = useRef(null);

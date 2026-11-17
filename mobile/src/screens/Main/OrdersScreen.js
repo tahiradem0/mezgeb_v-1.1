@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,7 +11,8 @@ import {
   Alert
 } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme } from '../../theme';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchOrders, updateOrderStatus, updateOrderPayment } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
@@ -26,7 +27,8 @@ const STATUS_TABS = [
 ];
 
 export default function OrdersScreen() {
-  const theme = useTheme();
+  const themeContext = useContext(ThemeContext);
+  const theme = themeContext?.theme || lightTheme;
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   const [orders, setOrders] = useState([]);

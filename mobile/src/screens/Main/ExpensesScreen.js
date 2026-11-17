@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput as RNTextInput, Keyboard, Platform, Image, KeyboardAvoidingView } from 'react-native';
 import { getCache, storeCache } from '../../utils/cache';
 import { setIntentionalBackground } from '../../components/BiometricWrapper';
 import { Text } from 'react-native-paper';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme } from '../../theme';
 import { apiClient, addToOfflineQueue } from '../../api/client';
 import NetInfo from '@react-native-community/netinfo';
 import { Feather } from '@expo/vector-icons';
@@ -84,7 +85,8 @@ const CustomWebCalendar = ({ value, onChange, onClose }) => {
 };
 
 export default function ExpensesScreen({ navigation }) {
-  const theme = useTheme();
+  const themeContext = useContext(ThemeContext);
+  const theme = themeContext?.theme || lightTheme;
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');

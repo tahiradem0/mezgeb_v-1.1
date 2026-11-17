@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useContext } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Text, Dimensions, Platform, Alert } from 'react-native';
 import { Title } from 'react-native-paper';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme } from '../../theme';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,7 +14,8 @@ import CustomAlert from '../../utils/CustomAlert';
 
 
 export default function ReportScreen() {
-  const theme = useTheme();
+  const themeContext = useContext(ThemeContext);
+  const theme = themeContext?.theme || lightTheme;
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [groupId, setGroupId] = useState(null);
   const activeGroupRef = useRef(null);

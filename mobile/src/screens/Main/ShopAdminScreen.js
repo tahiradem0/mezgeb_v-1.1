@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,7 +12,8 @@ import {
   Linking
 } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme } from '../../theme';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   fetchStoreOverview,
@@ -26,7 +27,8 @@ import {
 import { getCache, storeCache } from '../../utils/cache';
 
 export default function ShopAdminScreen() {
-  const theme = useTheme();
+  const themeContext = useContext(ThemeContext);
+  const theme = themeContext?.theme || lightTheme;
   const styles = React.useMemo(() => createStyles(theme), [theme]);
 
   // Section Selector: 'inventory' | 'debts' | 'capital'

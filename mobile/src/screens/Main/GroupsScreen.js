@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, FlatList, TextInput as RNTextInput, Platform } from 'react-native';
 import { Text } from 'react-native-paper';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme } from '../../theme';
 import { apiClient } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
 import { Feather } from '@expo/vector-icons';
@@ -15,7 +16,8 @@ import ManageCategoryModal from '../../components/ManageCategoryModal';
 const screenWidth = Dimensions.get('window').width;
 
 export default function GroupsScreen() {
-  const theme = useTheme();
+  const themeContext = useContext(ThemeContext);
+  const theme = themeContext?.theme || lightTheme;
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [groupId, setGroupId] = useState(null);
   const activeGroupRef = useRef(null);

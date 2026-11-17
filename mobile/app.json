@@ -50,7 +50,10 @@
       "expo-font",
       "expo-web-browser",
       "expo-notifications",
-      "expo-local-authentication"
+      "expo-local-authentication",
+      "expo-image",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": false,
