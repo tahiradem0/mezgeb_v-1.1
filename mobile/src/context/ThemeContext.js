@@ -47,3 +47,8 @@ export const ThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+
+export const useTheme = () => {
+  const context = React.useContext(ThemeContext);
+  return context?.theme || lightTheme;
+};

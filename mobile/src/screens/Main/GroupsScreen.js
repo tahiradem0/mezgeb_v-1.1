@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, FlatList, TextInput as RNTextInput, Platform } from 'react-native';
-import { Text , useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
+import { useTheme } from '../../context/ThemeContext';
 import { apiClient } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
 import { Feather } from '@expo/vector-icons';

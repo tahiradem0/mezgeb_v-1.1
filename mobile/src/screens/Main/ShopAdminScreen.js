@@ -11,7 +11,8 @@ import {
   Platform,
   Linking
 } from 'react-native';
-import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { useTheme } from '../../context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   fetchStoreOverview,

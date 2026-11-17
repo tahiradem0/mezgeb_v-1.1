@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, TextInput, TouchableOpacity, Text, Dimensions, Platform, Alert } from 'react-native';
-import { Title , useTheme } from 'react-native-paper';
+import { Title } from 'react-native-paper';
+import { useTheme } from '../../context/ThemeContext';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -10,7 +10,8 @@ import {
   Platform,
   Alert
 } from 'react-native';
-import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { useTheme } from '../../context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchOrders, updateOrderStatus, updateOrderPayment } from '../../api/client';
 import { getCache, storeCache } from '../../utils/cache';
