@@ -120,7 +120,6 @@ export default function OrdersScreen() {
     return (
       <View style={styles.card}>
         {/* Top Header */}
-        <div style={{ display: 'none' }} />
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.orderNumber}>
