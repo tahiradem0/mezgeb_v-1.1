@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform, Linking, DeviceEventEmitter } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform, Linking, DeviceEventEmitter, Modal, TextInput } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,6 +32,9 @@ export default function SettingsScreen() {
   const [isConnectionModalVisible, setConnectionModalVisible] = useState(false);
   const [isPasswordModalVisible, setPasswordModalVisible] = useState(false);
   const [isBudgetModalVisible, setBudgetModalVisible] = useState(false);
+  const [isServerModalVisible, setServerModalVisible] = useState(false);
+  const [customApiUrl, setCustomApiUrl] = useState('');
+  const [inputApiUrl, setInputApiUrl] = useState('');
   const [groups, setGroups] = useState([]);
 
   useEffect(() => {
@@ -40,6 +43,12 @@ export default function SettingsScreen() {
 
   const loadProfile = async () => {
     try {
+      const storedUrl = await AsyncStorage.getItem('custom_api_url');
+      if (storedUrl) {
+        setCustomApiUrl(storedUrl);
+        setInputApiUrl(storedUrl);
+      }
+
       // 1. Instant cache load
       const u = await AsyncStorage.getItem('currentUser');
       if (u) {
@@ -170,6 +179,26 @@ export default function SettingsScreen() {
     updateSetting('biometricEnabled', value);
   };
 
+  const handleSaveServerUrl = async (url) => {
+    try {
+      if (!url || url.trim() === '') {
+        await AsyncStorage.removeItem('custom_api_url');
+        setCustomApiUrl('');
+        setInputApiUrl('');
+        CustomAlert.alert("Reset", "Server URL reset to standard default (localhost:5000 / 10.0.2.2:5000)");
+      } else {
+        const cleanUrl = url.trim().replace(/\/+$/, '');
+        await AsyncStorage.setItem('custom_api_url', cleanUrl);
+        setCustomApiUrl(cleanUrl);
+        setInputApiUrl(cleanUrl);
+        CustomAlert.alert("Saved", `Server URL set to:\n${cleanUrl}`);
+      }
+      setServerModalVisible(false);
+    } catch (e) {
+      CustomAlert.alert("Error", "Could not save server URL");
+    }
+  };
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('currentUser');
@@ -283,6 +312,26 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Tele-Suk Store Console</Text>
+        <View style={styles.cardBlock}>
+          {renderSettingItem('shopping-bag', 'Customer Orders Console', null, Feather, () => navigation.navigate('Orders'))}
+          <View style={styles.divider} />
+          {renderSettingItem('package', 'Store Stock & Inventory', null, Feather, () => navigation.navigate('Shop'))}
+          <View style={styles.divider} />
+          {renderSettingItem('bar-chart-2', 'Reports & Expense Audit', null, Feather, () => navigation.navigate('Reports'))}
+          <View style={styles.divider} />
+          {renderSettingItem('grid', 'Expense Categories', null, Feather, () => navigation.navigate('Categories'))}
+        </View>
+      </View>
+
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Network & Server API</Text>
+        <View style={styles.cardBlock}>
+          {renderSettingItem('server', 'Backend Server URL', customApiUrl ? 'Custom' : 'Default', Feather, () => setServerModalVisible(true))}
+        </View>
+      </View>
+
+      <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Support</Text>
         <View style={styles.cardBlock}>
 
@@ -318,6 +367,65 @@ export default function SettingsScreen() {
         groups={groups}
         user={user}
       />
+
+      {/* Backend Server URL Modal */}
+      <Modal visible={isServerModalVisible} animationType="slide" transparent onRequestClose={() => setServerModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Backend Server URL</Text>
+              <TouchableOpacity onPress={() => setServerModalVisible(false)}>
+                <Feather name="x" size={22} color={theme.colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalDesc}>
+              Set the Express/Node server IP or URL for this mobile device.
+            </Text>
+
+            <TextInput
+              style={styles.serverInput}
+              value={inputApiUrl}
+              onChangeText={setInputApiUrl}
+              placeholder="http://192.168.1.5:5000/api"
+              placeholderTextColor="#9ca3af"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <Text style={styles.presetLabel}>Quick Presets:</Text>
+            <View style={styles.presetRow}>
+              <TouchableOpacity
+                style={styles.presetChip}
+                onPress={() => setInputApiUrl('http://localhost:5000/api')}
+              >
+                <Text style={styles.presetText}>Localhost</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.presetChip}
+                onPress={() => setInputApiUrl('http://10.0.2.2:5000/api')}
+              >
+                <Text style={styles.presetText}>Android (10.0.2.2)</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: theme.colors.surfaceElevated }]}
+                onPress={() => handleSaveServerUrl('')}
+              >
+                <Text style={[styles.modalBtnText, { color: theme.colors.textSecondary }]}>Reset Default</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: theme.colors.primary }]}
+                onPress={() => handleSaveServerUrl(inputApiUrl)}
+              >
+                <Text style={[styles.modalBtnText, { color: '#fff' }]}>Save URL</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -345,5 +453,84 @@ const createStyles = (theme) => StyleSheet.create({
   settingsItemRight: { flexDirection: 'row', alignItems: 'center' },
   settingsRightText: { fontSize: 14, color: theme.colors.textSecondary, marginRight: 10 },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, marginTop: 10, backgroundColor: theme.colors.surfaceElevated, paddingVertical: 16, borderRadius: 16 },
-  logoutText: { fontSize: 16, fontWeight: '600', color: theme.colors.error }
+  logoutText: { fontSize: 16, fontWeight: '600', color: theme.colors.error },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+  },
+  modalDesc: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginBottom: 14,
+    lineHeight: 18,
+  },
+  serverInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surfaceElevated || '#f9fafb',
+    marginBottom: 14,
+  },
+  presetLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+    marginBottom: 6,
+  },
+  presetRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+  },
+  presetChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: theme.colors.surfaceElevated || '#f3f4f6',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  presetText: {
+    fontSize: 12,
+    color: theme.colors.textPrimary,
+    fontWeight: '600',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });

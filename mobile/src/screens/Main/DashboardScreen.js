@@ -10,7 +10,7 @@ try {
 }
 import { io } from 'socket.io-client';
 import { BarChart } from 'react-native-chart-kit';
-import { apiClient, addToOfflineQueue, API_BASE_URL } from '../../api/client';
+import { apiClient, addToOfflineQueue, API_BASE_URL, fetchOrders, fetchStoreOverview } from '../../api/client';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -31,6 +31,8 @@ export default function DashboardScreen() {
   const [groups, setGroups] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [currentGroupId, setCurrentGroupId] = useState(null);
+  const [storeData, setStoreData] = useState(null);
+  const [storeOrders, setStoreOrders] = useState([]);
   const [analyticsPeriod, setAnalyticsPeriod] = useState('Yearly');
   const [refreshing, setRefreshing] = useState(false);
   const [tooltipData, setTooltipData] = useState(null);
@@ -118,12 +120,16 @@ export default function DashboardScreen() {
       const cachedExpenses = await getCache(expensesCacheKey);
       const cachedCategories = await getCache(categoriesCacheKey);
       const cachedGroups = await getCache(groupsCacheKey);
+      const cachedStore = await getCache('shop_store_cache');
+      const cachedOrders = await getCache('merchant_orders_cache');
       
       if (cachedExpenses) setExpenses(cachedExpenses);
       if (cachedCategories) setCategories(cachedCategories);
       if (cachedGroups) setGroups(cachedGroups);
+      if (cachedStore) setStoreData(cachedStore);
+      if (cachedOrders) setStoreOrders(cachedOrders);
       
-      if (cachedExpenses || cachedCategories || cachedGroups) {
+      if (cachedExpenses || cachedCategories || cachedGroups || cachedStore || cachedOrders) {
         setIsLoading(false); // Stop loading spinner immediately if cache exists
       }
 
@@ -133,11 +139,13 @@ export default function DashboardScreen() {
         categoriesUrl += `?groupId=${groupId}`;
       }
 
-      const [expRes, catRes, groupRes, budgetRes] = await Promise.all([
-        apiClient.get(expensesUrl),
-        apiClient.get(categoriesUrl),
-        apiClient.get('/groups'),
-        apiClient.get('/budgets') // fetch budgets for user
+      const [expRes, catRes, groupRes, budgetRes, storeRes, ordersRes] = await Promise.all([
+        apiClient.get(expensesUrl).catch(() => ({ data: [] })),
+        apiClient.get(categoriesUrl).catch(() => ({ data: [] })),
+        apiClient.get('/groups').catch(() => ({ data: [] })),
+        apiClient.get('/budgets').catch(() => ({ data: [] })),
+        fetchStoreOverview().catch(() => null),
+        fetchOrders().catch(() => [])
       ]);
       
       // Prevent race conditions: if user switched groups while fetching, discard this result.
@@ -146,14 +154,22 @@ export default function DashboardScreen() {
       }
       
       // 3. CACHE UPDATE & RE-RENDER
-      setExpenses(expRes.data);
-      setCategories(catRes.data);
-      setGroups(groupRes.data);
-      setBudgets(budgetRes.data);
+      setExpenses(expRes.data || []);
+      setCategories(catRes.data || []);
+      setGroups(groupRes.data || []);
+      setBudgets(budgetRes.data || []);
+      if (storeRes) {
+        setStoreData(storeRes);
+        storeCache('shop_store_cache', storeRes);
+      }
+      if (ordersRes) {
+        setStoreOrders(ordersRes);
+        storeCache('merchant_orders_cache', ordersRes);
+      }
       
-      storeCache(expensesCacheKey, expRes.data);
-      storeCache(categoriesCacheKey, catRes.data);
-      storeCache(groupsCacheKey, groupRes.data);
+      storeCache(expensesCacheKey, expRes.data || []);
+      storeCache(categoriesCacheKey, catRes.data || []);
+      storeCache(groupsCacheKey, groupRes.data || []);
 
     } catch (e) {
       console.log('Error refreshing data:', e);
@@ -229,6 +245,18 @@ export default function DashboardScreen() {
 
   // Calculate Total
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  // Store Operations calculations
+  const pendingOrdersCount = storeOrders.filter(
+    o => o.orderStatus === 'Pending' || o.orderStatus === 'Processing'
+  ).length;
+
+  const totalStoreSales = storeOrders
+    .filter(o => o.isPaid || o.orderStatus === 'Delivered')
+    .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+
+  const totalStockUnits = storeData?.summary?.totalStockUnits || 0;
+  const storeNetProfit = totalStoreSales - totalAmount;
   
   // Calculate This Month Total
   const currentMonth = new Date().getMonth();
@@ -469,6 +497,124 @@ export default function DashboardScreen() {
           }}
         >
           <View style={{ flex: 1 }}>
+
+      {/* Tele-Suk E-Commerce Operations Hub Card */}
+      <View style={styles.storeSnapshotCard}>
+        <View style={styles.storeHeaderRow}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <View style={styles.storeIconBadge}>
+              <Feather name="shopping-bag" size={16} color="#fff" />
+            </View>
+            <View style={{marginLeft: 10}}>
+              <Text style={styles.storeTitle}>Tele-Suk E-Commerce Hub</Text>
+              <Text style={styles.storeSubtitle}>Gondar Online Store Live Operations</Text>
+            </View>
+          </View>
+          <View style={styles.liveIndicator}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>Live</Text>
+          </View>
+        </View>
+
+        {/* 4-Stat Grid */}
+        <View style={styles.storeStatsGrid}>
+          {/* Revenue */}
+          <TouchableOpacity 
+            style={styles.storeStatBox}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Orders')}
+          >
+            <Text style={styles.storeStatLabel}>Sales Revenue</Text>
+            <Text style={[styles.storeStatValue, { color: '#10b981' }]}>
+              {isPrivate ? '****' : totalStoreSales.toLocaleString()} <Text style={styles.storeStatUnit}>ETB</Text>
+            </Text>
+            <Text style={styles.storeStatMeta}>{storeOrders.length} orders total</Text>
+          </TouchableOpacity>
+
+          {/* Pending Orders */}
+          <TouchableOpacity 
+            style={styles.storeStatBox}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Orders')}
+          >
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+              <Text style={styles.storeStatLabel}>Active Orders</Text>
+              {pendingOrdersCount > 0 && (
+                <View style={styles.orderAlertBadge}>
+                  <Text style={styles.orderAlertText}>{pendingOrdersCount}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.storeStatValue, { color: pendingOrdersCount > 0 ? '#f59e0b' : theme.colors.textPrimary }]}>
+              {pendingOrdersCount} <Text style={styles.storeStatUnit}>pending</Text>
+            </Text>
+            <Text style={styles.storeStatMeta}>Tap to review →</Text>
+          </TouchableOpacity>
+
+          {/* Inventory */}
+          <TouchableOpacity 
+            style={styles.storeStatBox}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Shop')}
+          >
+            <Text style={styles.storeStatLabel}>Inventory Units</Text>
+            <Text style={styles.storeStatValue}>
+              {totalStockUnits} <Text style={styles.storeStatUnit}>items</Text>
+            </Text>
+            <Text style={styles.storeStatMeta}>
+              {storeData?.summary?.lowStockCount ? `${storeData.summary.lowStockCount} low stock` : 'In Stock'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Net Margin */}
+          <TouchableOpacity 
+            style={styles.storeStatBox}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Shop')}
+          >
+            <Text style={styles.storeStatLabel}>Net Store Margin</Text>
+            <Text style={[styles.storeStatValue, { color: storeNetProfit >= 0 ? '#10b981' : '#ef4444' }]}>
+              {isPrivate ? '****' : `${storeNetProfit >= 0 ? '+' : ''}${storeNetProfit.toLocaleString()}`} <Text style={styles.storeStatUnit}>ETB</Text>
+            </Text>
+            <Text style={styles.storeStatMeta}>Sales - Outflows</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Hub Navigation Row */}
+        <View style={styles.quickNavRow}>
+          <TouchableOpacity 
+            style={styles.quickNavBtn} 
+            onPress={() => navigation.navigate('Orders')}
+          >
+            <Feather name="truck" size={15} color={theme.colors.primary} />
+            <Text style={styles.quickNavText}>Orders</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.quickNavBtn} 
+            onPress={() => navigation.navigate('Shop')}
+          >
+            <Feather name="box" size={15} color={theme.colors.primary} />
+            <Text style={styles.quickNavText}>Inventory</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.quickNavBtn} 
+            onPress={() => navigation.navigate('Shop')}
+          >
+            <Feather name="dollar-sign" size={15} color={theme.colors.primary} />
+            <Text style={styles.quickNavText}>Debt & Capital</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.quickNavBtn, { backgroundColor: theme.colors.primary }]} 
+            onPress={() => navigation.navigate('Add')}
+          >
+            <Feather name="plus-circle" size={15} color="#fff" />
+            <Text style={[styles.quickNavText, { color: '#fff' }]}>+ Expense</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Dark Expense Summary Card */}
       <View style={styles.summaryCard}>
@@ -875,6 +1021,132 @@ const createStyles = (theme) => StyleSheet.create({
   carouselText: {
     fontSize: 12,
     color: theme.colors.textSecondary,
+  },
+  storeSnapshotCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+  },
+  storeHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  storeIconBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  storeTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+  },
+  storeSubtitle: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 1,
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ecfdf5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#10b981',
+    marginRight: 5,
+  },
+  liveText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  storeStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 14,
+  },
+  storeStatBox: {
+    width: (screenWidth - 90) / 2,
+    backgroundColor: theme.colors.surfaceElevated || '#f9fafb',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  storeStatLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  storeStatValue: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: theme.colors.textPrimary,
+  },
+  storeStatUnit: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+  },
+  storeStatMeta: {
+    fontSize: 10,
+    color: theme.colors.textMuted,
+    marginTop: 4,
+  },
+  orderAlertBadge: {
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  orderAlertText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  quickNavRow: {
+    flexDirection: 'row',
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: 12,
+  },
+  quickNavBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surfaceElevated || '#f3f4f6',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    gap: 4,
+  },
+  quickNavText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
   },
   summaryCard: {
     backgroundColor: theme.colors.textPrimary,

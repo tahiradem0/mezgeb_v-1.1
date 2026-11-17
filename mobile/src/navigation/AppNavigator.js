@@ -15,6 +15,8 @@ import ExpensesScreen from '../screens/Main/ExpensesScreen';
 import GroupsScreen from '../screens/Main/GroupsScreen';
 import SettingsScreen from '../screens/Main/SettingsScreen';
 import ReportScreen from '../screens/Main/ReportScreen';
+import OrdersScreen from '../screens/Main/OrdersScreen';
+import ShopAdminScreen from '../screens/Main/ShopAdminScreen';
 
 const MockScreen = () => <View style={{flex:1, backgroundColor:'#FAFAFA'}} />
 
@@ -86,11 +88,11 @@ function MainTabNavigator() {
         }}
       />
       <Tab.Screen 
-        name="Reports" 
-        component={ReportScreen} 
+        name="Orders" 
+        component={OrdersScreen} 
         options={{
           tabBarIcon: ({ focused }) => (
-            <Feather name="bar-chart-2" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
+            <Feather name="shopping-bag" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
           ),
         }}
       />
@@ -107,11 +109,11 @@ function MainTabNavigator() {
         }}
       />
       <Tab.Screen 
-        name="Categories" 
-        component={GroupsScreen} 
+        name="Shop" 
+        component={ShopAdminScreen} 
         options={{
           tabBarIcon: ({ focused }) => (
-            <Feather name="hexagon" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
+            <Feather name="package" color={focused ? theme.colors.textPrimary : theme.colors.textMuted} size={24} />
           ),
         }}
       />
@@ -170,7 +172,13 @@ export default function AppNavigator() {
             <Stack.Screen name="Register" component={RegisterScreen} initialParams={{ setUserToken }} />
           </>
         ) : (
-          <Stack.Screen name="Main" component={MainTabNavigator} />
+          <>
+            <Stack.Screen name="Main" component={MainTabNavigator} />
+            <Stack.Screen name="Reports" component={ReportScreen} />
+            <Stack.Screen name="Categories" component={GroupsScreen} />
+            <Stack.Screen name="Orders" component={OrdersScreen} />
+            <Stack.Screen name="Shop" component={ShopAdminScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
