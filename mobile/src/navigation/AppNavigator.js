@@ -150,8 +150,13 @@ export default function AppNavigator() {
       setUserToken(null);
     });
 
+    const loginListener = DeviceEventEmitter.addListener('login', (token) => {
+      setUserToken(token);
+    });
+
     return () => {
       logoutListener.remove();
+      loginListener.remove();
     };
   }, []);
 
@@ -168,8 +173,8 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {userToken == null ? (
           <>
-            <Stack.Screen name="Login" component={LoginScreen} initialParams={{ setUserToken }} />
-            <Stack.Screen name="Register" component={RegisterScreen} initialParams={{ setUserToken }} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : (
           <>

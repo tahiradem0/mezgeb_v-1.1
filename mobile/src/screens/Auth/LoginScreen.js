@@ -1,6 +1,6 @@
 import { useTheme } from 'react-native-paper';
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity, Text, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Modal, TextInput } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Text, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Modal, TextInput, DeviceEventEmitter } from 'react-native';
 import { apiClient, API_BASE_URL } from '../../api/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
@@ -66,23 +66,31 @@ export default function LoginScreen({ navigation, route }) {
     setLoading(true);
     try {
       const response = await apiClient.post('/auth/login', { phone, password });
-      const { token, user } = response.data;
-      await AsyncStorage.setItem('token', token);
-      await AsyncStorage.setItem('currentUser', JSON.stringify(user));
+      const token = response.data.token;
+      const user = response.data.user || response.data;
+      
+      if (token) {
+        await AsyncStorage.setItem('token', token);
+      }
+      if (user) {
+        if (!user.username && user.name) user.username = user.name;
+        await AsyncStorage.setItem('currentUser', JSON.stringify(user));
+      }
       await AsyncStorage.setItem('savedPhoneNumber', phone);
       
+      DeviceEventEmitter.emit('login', token);
       if (route?.params?.setUserToken) {
         route.params.setUserToken(token);
       }
     } catch (error) {
       console.warn('Login error details:', error);
-      if (!error.response) {
+      if (error.response) {
+        CustomAlert.alert('Login Failed', error.response?.data?.message || error.response?.data?.error || 'Invalid credentials. Try again.');
+      } else {
         CustomAlert.alert(
           'Cannot Connect to Server',
-          'Could not reach backend at:\n' + (serverUrl || API_BASE_URL) + '\n\nTap the gear/server icon at the top right to verify your server IP.'
+          'Could not reach backend at:\n' + (serverUrl || API_BASE_URL) + '\n\nTap the server pill at the top right to verify your server IP.'
         );
-      } else {
-        CustomAlert.alert('Login Failed', error.response?.data?.message || error.response?.data?.error || 'Invalid credentials. Try again.');
       }
     } finally {
       setLoading(false);

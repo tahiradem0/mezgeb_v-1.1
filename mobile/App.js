@@ -35,6 +35,8 @@ try {
 LogBox.ignoreLogs([
   'Invalid DOM property `transform-origin`',
   'expo-notifications',
+  '[expo-notifications]',
+  'Non-serializable values were found in the navigation state',
 ]);
 
 // ── Error Boundary ──────────────────────────────────────────────

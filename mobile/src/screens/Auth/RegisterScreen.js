@@ -1,10 +1,9 @@
 import { useTheme } from 'react-native-paper';
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity, Text, Dimensions, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity, Text, Dimensions, KeyboardAvoidingView, Platform, ScrollView, TextInput, DeviceEventEmitter } from 'react-native';
 import { apiClient } from '../../api/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
-import { TextInput } from 'react-native';
 import CustomAlert from '../../utils/CustomAlert';
 
 
@@ -28,10 +27,16 @@ export default function RegisterScreen({ navigation, route }) {
     setLoading(true);
     try {
       const response = await apiClient.post('/auth/register', { name, phone, password });
-      const { token, user } = response.data;
-      await AsyncStorage.setItem('token', token);
-      await AsyncStorage.setItem('currentUser', JSON.stringify(user));
-      // Update app state
+      const token = response.data.token;
+      const user = response.data.user || response.data;
+      if (token) {
+        await AsyncStorage.setItem('token', token);
+      }
+      if (user) {
+        if (!user.username && user.name) user.username = user.name;
+        await AsyncStorage.setItem('currentUser', JSON.stringify(user));
+      }
+      DeviceEventEmitter.emit('login', token);
       if (route?.params?.setUserToken) {
         route.params.setUserToken(token);
       }
